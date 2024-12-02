@@ -57,8 +57,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.String() {
 
 			case "backspace":
+				handleBackspace(&state.base)
+				m.state = state
+			case "ctrl+t":
+				// Delete entire word
+				handleCtrlBackspace(&state.base)
 				m.state = state
 			case "ctrl+w":
+				// Return to menu
 				m.state = state.base.mainMenu
 				return m, nil
 			case "ctrl+r":
@@ -114,7 +120,44 @@ func (menu MainMenu) handleInput(msg tea.Msg) State {
 }
 
 func handleBackspace(base *TestBase) {
+	if len(base.mistakes.mistakesAt) == 0 {
+		return
+	}
 
+	base.inputBuffer = deleteLastChar(base.inputBuffer)
+	inputLength := len(base.inputBuffer)
+	_, ok := base.mistakes.mistakesAt[inputLength]
+
+	if ok {
+		delete(base.mistakes.mistakesAt, inputLength)
+	}
+
+	base.cursor = inputLength
+}
+
+func handleCtrlBackspace(base *TestBase) {
+	if len(base.mistakes.mistakesAt) == 0 {
+		return
+	}
+
+	punctuation := [6]rune{' ', ',', '.', '!', '?', ';'}
+
+	charToDelete := 0 // for some reason an ascii 0 is added to the input buffer when you press ctrl+_
+	for i := len(base.inputBuffer) - 1; i >= 0; i-- {
+		if !containsChar(punctuation[:], base.inputBuffer[i]) {
+			charToDelete += 1
+			delete(base.mistakes.mistakesAt, i)
+		} else if charToDelete == 1 && containsChar(punctuation[:], base.inputBuffer[i]) {
+			// if most recent character is a punctuation, delete that also
+			charToDelete += 1
+			delete(base.mistakes.mistakesAt, i)
+		} else {
+			break
+		}
+	}
+
+	base.inputBuffer = base.inputBuffer[0 : len(base.inputBuffer)-(charToDelete)]
+	base.cursor = base.cursor - charToDelete
 }
 
 func handleCharacterInput(msg tea.KeyMsg, base *TestBase) {

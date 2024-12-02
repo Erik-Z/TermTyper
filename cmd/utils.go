@@ -42,3 +42,12 @@ func deleteLastChar(input []rune) []rune {
 		return input[:len-1]
 	}
 }
+
+func containsChar(input []rune, char rune) bool {
+	for _, item := range input {
+		if item == char {
+			return true
+		}
+	}
+	return false
+}

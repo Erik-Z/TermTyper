@@ -70,7 +70,7 @@ func (m model) View() string {
 			s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter))
 		}
 
-		return s
+		return s + "\n" + string(state.base.inputBuffer)
 	}
 
 	return result.String()

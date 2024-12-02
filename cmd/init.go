@@ -19,6 +19,7 @@ func initMainMenu() MainMenu {
 		MainMenuSelection: []string{
 			"Timer",
 			"Word Count",
+			"Zen",
 			"Config",
 		},
 		cursor:                 0,

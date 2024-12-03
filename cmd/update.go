@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"github.com/charmbracelet/bubbles/stopwatch"
 	"github.com/charmbracelet/bubbles/timer"
 	tea "github.com/charmbracelet/bubbletea"
 )
@@ -86,6 +87,56 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
+	case ZenMode:
+		switch msg := msg.(type) {
+		case stopwatch.StartStopMsg:
+			stopwatchUpdate, cmdUpdate := state.stopwatch.stopwatch.Update(msg)
+			state.stopwatch.stopwatch = stopwatchUpdate
+			commands = append(commands, cmdUpdate)
+
+			m.state = state
+		case stopwatch.TickMsg:
+			stopwatchUpdate, cmdUpdate := state.stopwatch.stopwatch.Update(msg)
+			state.stopwatch.stopwatch = stopwatchUpdate
+			commands = append(commands, cmdUpdate)
+
+			elapsedMinutes := state.stopwatch.stopwatch.Elapsed().Minutes()
+			if elapsedMinutes != 0 {
+				state.base.wpmEachSecond = append(state.base.wpmEachSecond, state.base.calculateNormalizedWpm(elapsedMinutes))
+			}
+
+			m.state = state
+
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "enter", "tab":
+			case "ctrl+q":
+				m.state = state.base.mainMenu
+				return m, nil
+			case "ctrl+r":
+				m.state = initZenMode(state.base.mainMenu)
+				return m, nil
+			case "ctrl+backspace":
+				handleCtrlBackspace(&state.base)
+				m.state = state
+			case "backspace":
+				handleBackspace(&state.base)
+				m.state = state
+			default:
+				switch msg.Type {
+				case tea.KeyRunes:
+					if !state.stopwatch.isRunning {
+						commands = append(commands, state.stopwatch.stopwatch.Init())
+						state.stopwatch.isRunning = true
+					}
+
+					handleCharacterInputZenMode(msg, &state.base)
+					m.state = state
+				}
+			}
+
+		}
+
 	}
 
 	return m, tea.Batch(commands...)
@@ -97,7 +148,12 @@ func (menu MainMenu) handleInput(msg tea.Msg) State {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
-			return initTimerTest(menu)
+			if menu.MainMenuSelection[newCursor] == "Timer" {
+				return initTimerTest(menu)
+			} else if menu.MainMenuSelection[newCursor] == "Zen" {
+				return initZenMode(menu)
+			}
+
 		case "up", "k":
 			if menu.cursor == 0 {
 				newCursor = len(menu.MainMenuSelection) - 1
@@ -120,7 +176,7 @@ func (menu MainMenu) handleInput(msg tea.Msg) State {
 }
 
 func handleBackspace(base *TestBase) {
-	if len(base.mistakes.mistakesAt) == 0 {
+	if len(base.mistakes.mistakesAt) == 0 && len(base.wordsToEnter) > 0 {
 		return
 	}
 
@@ -136,7 +192,8 @@ func handleBackspace(base *TestBase) {
 }
 
 func handleCtrlBackspace(base *TestBase) {
-	if len(base.mistakes.mistakesAt) == 0 {
+	//TODO: Fix this for Zen Mode
+	if len(base.mistakes.mistakesAt) == 0 && len(base.wordsToEnter) > 0 {
 		return
 	}
 
@@ -172,6 +229,15 @@ func handleCharacterInput(msg tea.KeyMsg, base *TestBase) {
 		base.mistakes.mistakesAt[currInputBufferLen] = true
 		base.mistakes.rawMistakesCnt = base.mistakes.rawMistakesCnt + 1
 	}
+
+	newCursorPosition := len(base.inputBuffer)
+	base.cursor = newCursorPosition
+}
+
+func handleCharacterInputZenMode(msg tea.KeyMsg, base *TestBase) {
+	inputLetter := msg.Runes[len(msg.Runes)-1]
+	base.inputBuffer = append(base.inputBuffer, inputLetter)
+	base.rawInputCount += 1
 
 	newCursorPosition := len(base.inputBuffer)
 	base.cursor = newCursorPosition

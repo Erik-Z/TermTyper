@@ -5,6 +5,7 @@ import (
 	"termtyper/words"
 	"time"
 
+	"github.com/charmbracelet/bubbles/stopwatch"
 	"github.com/charmbracelet/bubbles/timer"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/muesli/termenv"
@@ -37,6 +38,26 @@ func initTimerTest(menu MainMenu) TimerTest {
 		},
 		base: TestBase{
 			wordsToEnter:  menu.timerTestWordGenerator.Generate("Common words"),
+			inputBuffer:   make([]rune, 0),
+			rawInputCount: 0,
+			mistakes: mistakes{
+				mistakesAt:     make(map[int]bool, 0),
+				rawMistakesCnt: 0,
+			},
+			cursor:   0,
+			mainMenu: menu,
+		},
+	}
+}
+
+func initZenMode(menu MainMenu) ZenMode {
+	return ZenMode{
+		stopwatch: StopWatch{
+			stopwatch: stopwatch.New(),
+			isRunning: false,
+		},
+		base: TestBase{
+			wordsToEnter:  make([]rune, 0),
 			inputBuffer:   make([]rune, 0),
 			rawInputCount: 0,
 			mistakes: mistakes{

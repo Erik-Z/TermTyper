@@ -71,6 +71,27 @@ func (m model) View() string {
 		}
 
 		return s + "\n" + string(state.base.inputBuffer)
+
+	case ZenMode:
+		var s string
+		stopwatch := style(state.stopwatch.stopwatch.View(), m.styles.magenta)
+		paragraphView := state.base.renderParagraphZenMode(lineLenLimit, m.styles)
+		lines := strings.Split(paragraphView, "\n")
+		cursorLine := findCursorLine(strings.Split(paragraphView, "\n"), state.base.cursor)
+
+		linesAroundCursor := strings.Join(getLinesAroundCursor(lines, cursorLine), "\n")
+
+		s += positionVerticaly(termHeight)
+		avgLineLen := averageLineLen(lines)
+		indentBy := uint(math.Max(0, float64(termWidth/2-avgLineLen/2)))
+
+		s += m.indent(stopwatch, indentBy) + "\n\n" + m.indent(linesAroundCursor, indentBy)
+		if !state.stopwatch.isRunning {
+			s += "\n\n\n"
+			s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter))
+		}
+
+		return s + "\n"
 	}
 
 	return result.String()
@@ -83,6 +104,26 @@ func (base *TestBase) renderParagraph(lineLimit int, styles Styles) string {
 
 	wrappedParagraph := wrapParagraph(paragraph, lineLimit)
 	return wrappedParagraph
+}
+
+func (base *TestBase) renderParagraphZenMode(lineLimit int, styles Styles) string {
+	paragraph := base.renderInputZenMode(styles)
+	paragraph += base.renderCursorZenMode(styles)
+
+	wrappedParagraph := wrapParagraph(paragraph, lineLimit)
+	return wrappedParagraph
+}
+
+func (base *TestBase) renderCursorZenMode(styles Styles) string {
+	cursorLetter := [1]rune{' '}
+
+	return style(string(cursorLetter[:]), styles.cursor)
+}
+
+func (base *TestBase) renderInputZenMode(styles Styles) string {
+	var input strings.Builder
+	input.WriteString(styleAll(base.inputBuffer, styles.correct))
+	return input.String()
 }
 
 func (base *TestBase) renderInput(styles Styles) string {

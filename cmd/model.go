@@ -4,6 +4,7 @@ import (
 	"termtyper/words"
 	"time"
 
+	"github.com/charmbracelet/bubbles/stopwatch"
 	"github.com/charmbracelet/bubbles/timer"
 	"github.com/muesli/termenv"
 )
@@ -62,6 +63,11 @@ type Timer struct {
 	isRunning bool
 }
 
+type ZenMode struct {
+	base      TestBase
+	stopwatch StopWatch
+}
+
 type Results struct {
 	wpm           int
 	accuracy      float64
@@ -71,6 +77,11 @@ type Results struct {
 	time          time.Duration
 	wordList      string
 	wpmEachSecond []float64
+}
+
+type StopWatch struct {
+	stopwatch stopwatch.Model
+	isRunning bool
 }
 
 type StringStyle func(string) termenv.Style

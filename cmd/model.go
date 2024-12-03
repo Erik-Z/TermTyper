@@ -68,6 +68,12 @@ type ZenMode struct {
 	stopwatch StopWatch
 }
 
+type WordCountTest struct {
+	stopwatch StopWatch
+	base      TestBase
+	completed bool
+}
+
 type Results struct {
 	wpm           int
 	accuracy      float64

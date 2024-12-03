@@ -25,6 +25,7 @@ func initMainMenu() MainMenu {
 		},
 		cursor:                 0,
 		timerTestWordGenerator: words.NewGenerator(),
+		wordTestWordGenerator:  words.NewGenerator(),
 	}
 }
 
@@ -47,6 +48,29 @@ func initTimerTest(menu MainMenu) TimerTest {
 			cursor:   0,
 			mainMenu: menu,
 		},
+		completed: false,
+	}
+}
+
+func initWordCountTest(menu MainMenu) WordCountTest {
+	menu.wordTestWordGenerator.Count = 30
+	return WordCountTest{
+		stopwatch: StopWatch{
+			stopwatch: stopwatch.New(),
+			isRunning: false,
+		},
+		base: TestBase{
+			wordsToEnter:  menu.wordTestWordGenerator.Generate("Common words"),
+			inputBuffer:   make([]rune, 0),
+			rawInputCount: 0,
+			mistakes: mistakes{
+				mistakesAt:     make(map[int]bool, 0),
+				rawMistakesCnt: 0,
+			},
+			cursor:   0,
+			mainMenu: menu,
+		},
+		completed: false,
 	}
 }
 

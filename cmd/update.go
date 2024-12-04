@@ -137,6 +137,55 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		}
 
+	case WordCountTest:
+		switch msg := msg.(type) {
+		case stopwatch.StartStopMsg:
+			stopwatchUpdate, cmdUpdate := state.stopwatch.stopwatch.Update(msg)
+			state.stopwatch.stopwatch = stopwatchUpdate
+			commands = append(commands, cmdUpdate)
+
+			m.state = state
+		case stopwatch.TickMsg:
+			stopwatchUpdate, cmdUpdate := state.stopwatch.stopwatch.Update(msg)
+			state.stopwatch.stopwatch = stopwatchUpdate
+			commands = append(commands, cmdUpdate)
+
+			elapsedMinutes := state.stopwatch.stopwatch.Elapsed().Minutes()
+			if elapsedMinutes != 0 {
+				state.base.wpmEachSecond = append(state.base.wpmEachSecond, state.base.calculateNormalizedWpm(elapsedMinutes))
+			}
+
+			m.state = state
+
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "enter", "tab":
+			case "ctrl+q":
+				m.state = state.base.mainMenu
+				return m, nil
+			case "ctrl+r":
+				m.state = initWordCountTest(state.base.mainMenu)
+				return m, nil
+			case "ctrl+backspace":
+				handleCtrlBackspace(&state.base)
+				m.state = state
+			case "backspace":
+				handleBackspace(&state.base)
+				m.state = state
+			default:
+				switch msg.Type {
+				case tea.KeyRunes:
+					if !state.stopwatch.isRunning {
+						commands = append(commands, state.stopwatch.stopwatch.Init())
+						state.stopwatch.isRunning = true
+					}
+
+					handleCharacterInput(msg, &state.base)
+					m.state = state
+				}
+			}
+		}
+
 	}
 
 	return m, tea.Batch(commands...)
@@ -152,6 +201,8 @@ func (menu MainMenu) handleInput(msg tea.Msg) State {
 				return initTimerTest(menu)
 			} else if menu.MainMenuSelection[newCursor] == "Zen" {
 				return initZenMode(menu)
+			} else if menu.MainMenuSelection[newCursor] == "Word Count" {
+				return initWordCountTest(menu)
 			}
 
 		case "up", "k":

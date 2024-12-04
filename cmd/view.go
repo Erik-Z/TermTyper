@@ -92,6 +92,27 @@ func (m model) View() string {
 		}
 
 		return s + "\n"
+
+	case WordCountTest:
+		var s string
+		stopwatch := style(state.stopwatch.stopwatch.View(), m.styles.magenta)
+		paragraphView := state.base.renderParagraph(lineLenLimit, m.styles)
+		lines := strings.Split(paragraphView, "\n")
+		cursorLine := findCursorLine(strings.Split(paragraphView, "\n"), state.base.cursor)
+
+		linesAroundCursor := strings.Join(getLinesAroundCursor(lines, cursorLine), "\n")
+
+		s += positionVerticaly(termHeight)
+		avgLineLen := averageLineLen(lines)
+		indentBy := uint(math.Max(0, float64(termWidth/2-avgLineLen/2)))
+
+		s += m.indent(stopwatch, indentBy) + "\n\n" + m.indent(linesAroundCursor, indentBy)
+		if !state.stopwatch.isRunning {
+			s += "\n\n\n"
+			s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter))
+		}
+
+		return s + "\n"
 	}
 
 	return result.String()

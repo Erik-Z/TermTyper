@@ -181,11 +181,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					}
 
 					handleCharacterInput(msg, &state.base)
+					recordInput(msg, &state)
+
 					m.state = state
 				}
 			}
 		}
 		// TODO don't complete the test if the last character is a mistake
+		// TODO user cannot enter a character after end of input buffer.
+		// TODO fix crash when user enters a wrong character for the last character
 		if len(state.base.wordsToEnter) == len(state.base.inputBuffer) &&
 			!state.base.mistakes.mistakesAt[len(state.base.inputBuffer)-1] {
 			//termenv.DefaultOutput().Reset()
@@ -198,6 +202,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 
+	case WordCountTestResults:
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "ctrl+q":
+				m.state = state.results.mainMenu
+				return m, nil
+			case "ctrl+r":
+				m.state = initWordCountTest(state.results.mainMenu)
+				return m, nil
+			}
+		}
 	}
 
 	return m, tea.Batch(commands...)
@@ -256,6 +272,7 @@ func handleBackspace(base *TestBase) {
 
 func handleCtrlBackspace(base *TestBase) {
 	//TODO: Fix this for Zen Mode
+	//TODO if multiple punctuation is in a row we delete the punctuations
 	if len(base.mistakes.mistakesAt) == 0 && len(base.wordsToEnter) > 0 {
 		return
 	}
@@ -304,4 +321,12 @@ func handleCharacterInputZenMode(msg tea.KeyMsg, base *TestBase) {
 
 	newCursorPosition := len(base.inputBuffer)
 	base.cursor = newCursorPosition
+}
+
+func recordInput(msg tea.KeyMsg, state *WordCountTest) {
+	keyPress := KeyPress{
+		key:       string(msg.Runes[:]),
+		timestamp: state.stopwatch.stopwatch.Elapsed(),
+	}
+	state.base.testRecord = append(state.base.testRecord, keyPress)
 }

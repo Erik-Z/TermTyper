@@ -83,8 +83,14 @@ type Results struct {
 	time          time.Duration
 	wordList      string
 	wpmEachSecond []float64
+	mainMenu      MainMenu
 }
 
+type WordCountTestResults struct {
+	wpmEachSecond []float64
+	wordCount     int
+	results       Results
+}
 type StopWatch struct {
 	stopwatch stopwatch.Model
 	isRunning bool

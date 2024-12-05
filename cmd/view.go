@@ -5,6 +5,7 @@ import (
 	"math"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -14,6 +15,12 @@ import (
 var lineLenLimit int
 var minLineLen int = 5
 var maxLineLen int = 40
+var resultsStyle = lipgloss.NewStyle().
+	Align(lipgloss.Center).
+	PaddingTop(1).
+	PaddingBottom(1).
+	PaddingLeft(5).
+	PaddingRight(5)
 
 func (m model) View() string {
 	var result strings.Builder
@@ -113,6 +120,23 @@ func (m model) View() string {
 		}
 
 		return s + "\n"
+
+	case WordCountTestResults:
+		var s string
+		rawWpmShow := "raw: " + style(strconv.Itoa(state.results.rawWpm), m.styles.magenta)
+		wpm := "wpm: " + style(strconv.Itoa(state.results.wpm), m.styles.magenta)
+		givenTime := "time: " + style(state.results.time.String(), m.styles.magenta)
+		wordCount := "cnt: " + style(strconv.Itoa(state.wordCount), m.styles.magenta)
+		accuracy := "accuracy: " + style(fmt.Sprintf("%.1f", state.results.accuracy), m.styles.magenta)
+		words := "words: " + style(state.results.wordList, m.styles.magenta)
+
+		statsLine1 := fmt.Sprintf("%s %s %s", accuracy, rawWpmShow, givenTime)
+		statsLine2 := wordCount + " " + words
+
+		fullParagraph := lipgloss.JoinVertical(lipgloss.Center, resultsStyle.Padding(1).Render(wpm), resultsStyle.Padding(0).Render(statsLine1), resultsStyle.Render(statsLine2))
+		s = lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, fullParagraph)
+
+		return s
 	}
 
 	return result.String()

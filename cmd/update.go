@@ -185,6 +185,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
+		// TODO don't complete the test if the last character is a mistake
+		if len(state.base.wordsToEnter) == len(state.base.inputBuffer) &&
+			!state.base.mistakes.mistakesAt[len(state.base.inputBuffer)-1] {
+			//termenv.DefaultOutput().Reset()
+			var results = state.calculateResults()
+			results.mainMenu = state.base.mainMenu
+			m.state = WordCountTestResults{
+				wpmEachSecond: state.base.wpmEachSecond,
+				wordCount:     state.base.mainMenu.wordTestWordGenerator.Count,
+				results:       results,
+			}
+		}
 
 	}
 

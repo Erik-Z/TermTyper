@@ -20,6 +20,19 @@ func (m TimerTest) calculateResults() Results {
 	}
 }
 
+func (test WordCountTest) calculateResults() Results {
+	elapsedMinutes := test.stopwatch.stopwatch.Elapsed().Minutes()
+	wpm := test.base.calculateNormalizedWpm(elapsedMinutes)
+	return Results{
+		wpm:           int(wpm),
+		accuracy:      test.base.calculateAccuracy(),
+		rawWpm:        int(test.base.calculateRawWpm(elapsedMinutes)),
+		cpm:           test.base.calculateCpm(elapsedMinutes),
+		time:          test.stopwatch.stopwatch.Elapsed(),
+		wpmEachSecond: test.base.wpmEachSecond,
+	}
+}
+
 func (base TestBase) calculateRawWpm(elapsedMinutes float64) float64 {
 	return base.calculateWpm(len(strings.Split(string(base.inputBuffer), " ")), elapsedMinutes)
 }

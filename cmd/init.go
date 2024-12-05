@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"runtime"
 	"termtyper/words"
 	"time"
@@ -107,7 +108,7 @@ func initModel(termProfile termenv.Profile, foregroundColor termenv.Color, width
 				return termenv.String(str).Foreground(foregroundColor).Faint()
 			},
 			mistake: func(str string) termenv.Style {
-				return termenv.String(str).Foreground(termProfile.Color("1")).Underline()
+				return termenv.String(str).Foreground(termProfile.Color("1"))
 			},
 			cursor: func(str string) termenv.Style {
 				return termenv.String(str).Reverse().Bold()
@@ -120,11 +121,10 @@ func initModel(termProfile termenv.Profile, foregroundColor termenv.Color, width
 }
 
 func OsInit() {
-	// enable colors for one guy who uses windows
 	if runtime.GOOS == "windows" {
 		mode, err := termenv.EnableWindowsANSIConsole()
 		if err != nil {
-			panic(err)
+			fmt.Println(err)
 		}
 		defer termenv.RestoreWindowsConsole(mode)
 	}

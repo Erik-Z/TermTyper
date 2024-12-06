@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/muesli/reflow/indent"
 	"github.com/muesli/reflow/wordwrap"
 )
 
@@ -66,7 +67,7 @@ func (m model) View() string {
 
 		linesAroundCursor := strings.Join(getLinesAroundCursor(lines, cursorLine), "\n")
 
-		s += positionVerticaly(termHeight)
+		s += positionVertically(termHeight)
 		avgLineLen := averageLineLen(lines)
 		indentBy := uint(math.Max(0, float64(termWidth/2-avgLineLen/2)))
 
@@ -88,17 +89,23 @@ func (m model) View() string {
 
 		linesAroundCursor := strings.Join(getLinesAroundCursor(lines, cursorLine), "\n")
 
-		s += positionVerticaly(termHeight)
-		avgLineLen := averageLineLen(lines)
-		indentBy := uint(math.Max(0, float64(termWidth/2-avgLineLen/2)))
+		s += positionVertically(termHeight)
+		//avgLineLen := averageLineLen(lines)
+		//indentBy := uint(math.Max(0, float64(termWidth/2-avgLineLen/2)))
 
-		s += m.indent(stopwatch, indentBy) + "\n\n" + m.indent(linesAroundCursor, indentBy)
+		//s += m.indent(stopwatch, indentBy) + "\n\n" + m.indent(linesAroundCursor, indentBy)
+		s += stopwatch + "\n\n" + linesAroundCursor
 		if !state.stopwatch.isRunning {
 			s += "\n\n\n"
-			s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter))
+			s += style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter)
+			//s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter))
 		}
+		centeredText := lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center+lipgloss.Position(termHeight/2), s)
+		borderStyle := lipgloss.NewStyle().
+			Border(lipgloss.DoubleBorder()).
+			BorderForeground(lipgloss.Color("#FF00FF"))
 
-		return s + "\n"
+		return borderStyle.Render(centeredText)
 
 	case WordCountTest:
 		var s string
@@ -109,29 +116,26 @@ func (m model) View() string {
 
 		linesAroundCursor := strings.Join(getLinesAroundCursor(lines, cursorLine), "\n")
 
-		s += positionVerticaly(termHeight)
+		s += positionVertically(termHeight)
 		avgLineLen := averageLineLen(lines)
 		indentBy := uint(math.Max(0, float64(termWidth/2-avgLineLen/2)))
 
 		s += m.indent(stopwatch, indentBy) + "\n\n" + m.indent(linesAroundCursor, indentBy)
-		if !state.stopwatch.isRunning {
-			s += "\n\n\n"
-			s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter))
-		}
+		s += "\n\n\n"
+		s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter))
 
-		return s + "\n"
+		return s
 
 	case WordCountTestResults:
 		var s string
 		rawWpmShow := "raw: " + style(strconv.Itoa(state.results.rawWpm), m.styles.magenta)
 		wpm := "wpm: " + style(strconv.Itoa(state.results.wpm), m.styles.magenta)
 		givenTime := "time: " + style(state.results.time.String(), m.styles.magenta)
-		wordCount := "cnt: " + style(strconv.Itoa(state.wordCount), m.styles.magenta)
+		wordCount := "count: " + style(strconv.Itoa(state.wordCount), m.styles.magenta)
 		accuracy := "accuracy: " + style(fmt.Sprintf("%.1f", state.results.accuracy), m.styles.magenta)
-		words := "words: " + style(state.results.wordList, m.styles.magenta)
 
 		statsLine1 := fmt.Sprintf("%s %s %s", accuracy, rawWpmShow, givenTime)
-		statsLine2 := wordCount + " " + words
+		statsLine2 := wordCount
 
 		fullParagraph := lipgloss.JoinVertical(lipgloss.Center, resultsStyle.Padding(1).Render(wpm), resultsStyle.Padding(0).Render(statsLine1), resultsStyle.Render(statsLine2))
 		s = lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, fullParagraph)
@@ -200,18 +204,25 @@ func (base *TestBase) renderInput(styles Styles) string {
 }
 
 func (base *TestBase) renderCursor(styles Styles) string {
+	if len(base.inputBuffer) == len(base.wordsToEnter) {
+		s := [1]rune{' '}
+		return style(string(s[:]), styles.cursor)
+	}
 	cursorLetter := base.wordsToEnter[len(base.inputBuffer) : len(base.inputBuffer)+1]
 
 	return style(string(cursorLetter), styles.cursor)
 }
 
 func (base *TestBase) renderWordsToEnter(styles Styles) string {
-	wordsToEnter := base.wordsToEnter[len(base.inputBuffer)+1:] // without cursor
+	if len(base.inputBuffer) == len(base.wordsToEnter) {
+		return ""
+	}
+	wordsToEnter := base.wordsToEnter[len(base.inputBuffer)+1:]
 
 	return style(string(wordsToEnter), styles.toEnter)
 }
 
-func positionVerticaly(termHeight int) string {
+func positionVertically(termHeight int) string {
 	var acc strings.Builder
 
 	for i := 0; i < termHeight/2-3; i++ {
@@ -222,14 +233,9 @@ func positionVerticaly(termHeight int) string {
 }
 
 func (m model) indent(block string, indentBy uint) string {
-	indentation := strings.Repeat(" ", int(indentBy))
-	lines := strings.Split(block, "\n")
+	indentedBlock := indent.String(block, indentBy)
 
-	for i, line := range lines {
-		lines[i] = indentation + line
-	}
-
-	return strings.Join(lines, "\n")
+	return indentedBlock
 }
 
 func wrapParagraph(paragraph string, lineLimit int) string {

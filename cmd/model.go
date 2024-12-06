@@ -37,7 +37,7 @@ type TestBase struct {
 
 type KeyPress struct {
 	key       string
-	timestamp time.Time
+	timestamp time.Duration
 }
 
 type mistakes struct {

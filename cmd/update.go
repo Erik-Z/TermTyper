@@ -193,7 +193,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if len(state.base.wordsToEnter) == len(state.base.inputBuffer) &&
 			!state.base.mistakes.mistakesAt[len(state.base.inputBuffer)-1] {
 			//termenv.DefaultOutput().Reset()
-			var results = state.calculateResults()
+			results := state.calculateResults()
+
 			results.mainMenu = state.base.mainMenu
 			m.state = WordCountTestResults{
 				wpmEachSecond: state.base.wpmEachSecond,
@@ -298,6 +299,9 @@ func handleCtrlBackspace(base *TestBase) {
 }
 
 func handleCharacterInput(msg tea.KeyMsg, base *TestBase) {
+	if len(base.inputBuffer) == len(base.wordsToEnter) {
+		return
+	}
 	inputLetter := msg.Runes[len(msg.Runes)-1]
 	currInputBufferLen := len(base.inputBuffer)
 	correctNextLetter := base.wordsToEnter[currInputBufferLen]

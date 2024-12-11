@@ -24,7 +24,7 @@ var resultsStyle = lipgloss.NewStyle().
 	PaddingRight(5)
 
 func (m model) View() string {
-	var result strings.Builder
+	var s string
 
 	termWidth, termHeight := m.width-2, m.height-2
 	reactiveLimit := (termWidth * 6) / 10
@@ -56,7 +56,6 @@ func (m model) View() string {
 		return borderStyle.Render(centeredText)
 
 	case TimerTest:
-		var s string
 		var timer string
 
 		timer = style(state.timer.timer.View(), m.styles.magenta)
@@ -81,7 +80,6 @@ func (m model) View() string {
 		return s + "\n" + string(state.base.inputBuffer)
 
 	case ZenMode:
-		var s string
 		stopwatch := style(state.stopwatch.stopwatch.View(), m.styles.magenta)
 		paragraphView := state.base.renderParagraphZenMode(lineLenLimit, m.styles)
 		lines := strings.Split(paragraphView, "\n")
@@ -124,10 +122,7 @@ func (m model) View() string {
 		s += "\n\n\n"
 		s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter))
 
-		return s
-
 	case WordCountTestResults:
-		var s string
 		rawWpmShow := "raw: " + style(strconv.Itoa(state.results.rawWpm), m.styles.magenta)
 		wpm := "wpm: " + style(strconv.Itoa(state.results.wpm), m.styles.magenta)
 		givenTime := "time: " + style(state.results.time.String(), m.styles.magenta)
@@ -140,10 +135,19 @@ func (m model) View() string {
 		fullParagraph := lipgloss.JoinVertical(lipgloss.Center, resultsStyle.Padding(1).Render(wpm), resultsStyle.Padding(0).Render(statsLine1), resultsStyle.Render(statsLine2))
 		s = lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, fullParagraph)
 
-		return s
+	case TimerTestResult:
+		rawWpmShow := "raw: " + style(strconv.Itoa(state.results.rawWpm), m.styles.magenta)
+		wpm := "wpm: " + style(strconv.Itoa(state.results.wpm), m.styles.magenta)
+		givenTime := "time: " + style(state.results.time.String(), m.styles.magenta)
+		accuracy := "accuracy: " + style(fmt.Sprintf("%.1f", state.results.accuracy), m.styles.magenta)
+
+		statsLine1 := fmt.Sprintf("%s %s %s", accuracy, rawWpmShow, givenTime)
+
+		fullParagraph := lipgloss.JoinVertical(lipgloss.Center, resultsStyle.Padding(1).Render(wpm), resultsStyle.Padding(0).Render(statsLine1))
+		s = lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, fullParagraph)
 	}
 
-	return result.String()
+	return s
 }
 
 func (base *TestBase) renderParagraph(lineLimit int, styles Styles) string {

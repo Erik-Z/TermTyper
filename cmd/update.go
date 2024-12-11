@@ -45,18 +45,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if state.timer.timer.Timedout() {
 				state.timer.timedout = true
 
-				// var results = state.calculateResults()
-				// m.state = TimerTestResult{
-				// 	wpmEachSecond: state.base.wpmEachSecond,
-				// 	results:       results,
-				// }
-
-				m.state = initMainMenu()
+				var results = state.calculateResults()
+				m.state = TimerTestResult{
+					wpmEachSecond: state.base.wpmEachSecond,
+					results:       results,
+				}
 			}
 
 		case tea.KeyMsg:
 			switch msg.String() {
-
 			case "backspace":
 				handleBackspace(&state.base)
 				m.state = state
@@ -65,14 +62,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				handleCtrlBackspace(&state.base)
 				m.state = state
 			case "ctrl+w":
-				// Return to menu
 				m.state = state.base.mainMenu
 				return m, nil
 			case "ctrl+r":
-				// Restart the test
 				m.state = initTimerTest(state.base.mainMenu)
 				return m, nil
-
 			default:
 				switch msg.Type {
 				case tea.KeyRunes:
@@ -187,9 +181,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				}
 			}
 		}
-		// TODO don't complete the test if the last character is a mistake
-		// TODO user cannot enter a character after end of input buffer.
-		// TODO fix crash when user enters a wrong character for the last character
 		if len(state.base.wordsToEnter) == len(state.base.inputBuffer) &&
 			!state.base.mistakes.mistakesAt[len(state.base.inputBuffer)-1] {
 			//termenv.DefaultOutput().Reset()

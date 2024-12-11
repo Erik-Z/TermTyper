@@ -106,7 +106,6 @@ func (m model) View() string {
 		return borderStyle.Render(centeredText)
 
 	case WordCountTest:
-		var s string
 		stopwatch := style(state.stopwatch.stopwatch.View(), m.styles.magenta)
 		paragraphView := state.base.renderParagraph(lineLenLimit, m.styles)
 		lines := strings.Split(paragraphView, "\n")

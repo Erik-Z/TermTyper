@@ -131,7 +131,23 @@ func (m model) View() string {
 		statsLine1 := fmt.Sprintf("%s %s %s", accuracy, rawWpmShow, givenTime)
 		statsLine2 := wordCount
 
-		fullParagraph := lipgloss.JoinVertical(lipgloss.Center, resultsStyle.Padding(1).Render(wpm), resultsStyle.Padding(0).Render(statsLine1), resultsStyle.Render(statsLine2))
+		var menuItems []string
+		menuItemsStyle := lipgloss.NewStyle().Padding(0, 2, 0, 2)
+		for i, choice := range state.results.resultsSelection {
+			choiceShow := style(choice, m.styles.toEnter)
+
+			choiceShow = wrapWithCursor(state.results.cursor == i, choiceShow, m.styles.toEnter)
+			choiceShow = menuItemsStyle.Render(choiceShow)
+			menuItems = append(menuItems, choiceShow)
+		}
+
+		resultsMenu := lipgloss.JoinHorizontal(lipgloss.Center, menuItems...)
+
+		fullParagraph := lipgloss.JoinVertical(
+			lipgloss.Center, resultsStyle.Padding(1).Render(wpm),
+			resultsStyle.Padding(0).Render(statsLine1),
+			resultsStyle.Render(statsLine2), resultsStyle.Render(resultsMenu),
+		)
 		s = lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, fullParagraph)
 
 	case TimerTestResult:

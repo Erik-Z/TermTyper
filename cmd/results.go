@@ -2,21 +2,25 @@ package cmd
 
 import (
 	"math"
-
 	"strings"
 )
 
-func (m TimerTest) calculateResults() Results {
-	elapsedMinutes := m.timer.duration.Minutes()
-	wpm := m.base.calculateNormalizedWpm(elapsedMinutes)
+func (test TimerTest) calculateResults() Results {
+	elapsedMinutes := test.timer.duration.Minutes()
+	wpm := test.base.calculateNormalizedWpm(elapsedMinutes)
 
 	return Results{
 		wpm:           int(wpm),
-		accuracy:      m.base.calculateAccuracy(),
-		rawWpm:        int(m.base.calculateRawWpm(elapsedMinutes)),
-		cpm:           m.base.calculateCpm(elapsedMinutes),
-		time:          m.timer.duration,
-		wpmEachSecond: m.base.wpmEachSecond,
+		accuracy:      test.base.calculateAccuracy(),
+		rawWpm:        int(test.base.calculateRawWpm(elapsedMinutes)),
+		cpm:           test.base.calculateCpm(elapsedMinutes),
+		time:          test.timer.duration,
+		wpmEachSecond: test.base.wpmEachSecond,
+		mainMenu:      test.base.mainMenu,
+		resultsSelection: []string{
+			"Main Menu",
+			"Replay",
+		},
 	}
 }
 
@@ -29,7 +33,13 @@ func (test WordCountTest) calculateResults() Results {
 		rawWpm:        int(test.base.calculateRawWpm(elapsedMinutes)),
 		cpm:           test.base.calculateCpm(elapsedMinutes),
 		time:          test.stopwatch.stopwatch.Elapsed(),
+		mainMenu:      test.base.mainMenu,
 		wpmEachSecond: test.base.wpmEachSecond,
+		resultsSelection: []string{
+			"Next Test",
+			"Main Menu",
+			"Replay",
+		},
 	}
 }
 

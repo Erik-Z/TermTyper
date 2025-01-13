@@ -74,16 +74,28 @@ type WordCountTest struct {
 	completed bool
 }
 
+type Replay struct {
+	wordsToEnter []rune
+	testRecord   []KeyPress
+	results      *WordCountTestResults
+}
+
+type TestResults interface {
+	ShowReplay()
+}
+
 type Results struct {
-	wpm           int
-	accuracy      float64
-	deltaWpm      float64
-	rawWpm        int
-	cpm           int
-	time          time.Duration
-	wordList      string
-	wpmEachSecond []float64
-	mainMenu      MainMenu
+	wpm              int
+	accuracy         float64
+	deltaWpm         float64
+	rawWpm           int
+	cpm              int
+	time             time.Duration
+	wordList         string
+	wpmEachSecond    []float64
+	mainMenu         MainMenu
+	resultsSelection []string
+	cursor           int
 }
 
 type WordCountTestResults struct {

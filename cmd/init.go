@@ -95,6 +95,14 @@ func initZenMode(menu MainMenu) ZenMode {
 	}
 }
 
+func (result *WordCountTestResults) showReplay(wordsToEnter []rune, testRecord []KeyPress) Replay {
+	return Replay{
+		wordsToEnter: wordsToEnter,
+		testRecord:   testRecord,
+		results:      result,
+	}
+}
+
 func initModel(termProfile termenv.Profile, foregroundColor termenv.Color, width, height int) model {
 	return model{
 		state:  initMainMenu(),

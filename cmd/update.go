@@ -22,8 +22,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "esc":
 			return m, tea.Quit
 		}
-
 	}
+
 	switch state := m.state.(type) {
 	case MainMenu:
 		m.state = state.handleInput(msg)
@@ -206,6 +206,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 		}
+		m.state = state.handleInput(msg)
 	}
 
 	return m, tea.Batch(commands...)
@@ -244,6 +245,31 @@ func (menu MainMenu) handleInput(msg tea.Msg) State {
 	}
 	menu.cursor = newCursor
 	return menu
+}
+
+func (wordCountTestResults WordCountTestResults) handleInput(msg tea.Msg) State {
+	newCursor := wordCountTestResults.results.cursor
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "left", "h":
+			if wordCountTestResults.results.cursor == 0 {
+				newCursor = len(wordCountTestResults.results.resultsSelection) - 1
+			} else {
+				newCursor--
+			}
+
+		case "right", "l":
+			if wordCountTestResults.results.cursor == len(wordCountTestResults.results.resultsSelection)-1 {
+				newCursor = 0
+			} else {
+				newCursor++
+			}
+		}
+
+	}
+	wordCountTestResults.results.cursor = newCursor
+	return wordCountTestResults
 }
 
 func handleBackspace(base *TestBase) {

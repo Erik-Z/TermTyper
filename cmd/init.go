@@ -57,7 +57,7 @@ func initWordCountTest(menu MainMenu) WordCountTest {
 	menu.wordTestWordGenerator.Count = 30
 	return WordCountTest{
 		stopwatch: StopWatch{
-			stopwatch: stopwatch.New(),
+			stopwatch: stopwatch.NewWithInterval(time.Millisecond),
 			isRunning: false,
 		},
 		base: TestBase{
@@ -92,14 +92,6 @@ func initZenMode(menu MainMenu) ZenMode {
 			cursor:   0,
 			mainMenu: menu,
 		},
-	}
-}
-
-func (result *WordCountTestResults) showReplay(wordsToEnter []rune, testRecord []KeyPress) Replay {
-	return Replay{
-		wordsToEnter: wordsToEnter,
-		testRecord:   testRecord,
-		results:      result,
 	}
 }
 

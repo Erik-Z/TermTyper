@@ -106,7 +106,8 @@ func (m model) View() string {
 		return borderStyle.Render(centeredText)
 
 	case WordCountTest:
-		stopwatch := style(state.stopwatch.stopwatch.View(), m.styles.magenta)
+		stopwatchViewSeconds := strconv.FormatFloat(state.stopwatch.stopwatch.Elapsed().Seconds(), 'f', 0, 64) + "s"
+		stopwatch := style(stopwatchViewSeconds, m.styles.magenta)
 		paragraphView := state.base.renderParagraph(lineLenLimit, m.styles)
 		lines := strings.Split(paragraphView, "\n")
 		cursorLine := findCursorLine(strings.Split(paragraphView, "\n"), state.base.cursor)
@@ -136,7 +137,7 @@ func (m model) View() string {
 		for i, choice := range state.results.resultsSelection {
 			choiceShow := style(choice, m.styles.toEnter)
 
-			choiceShow = wrapWithCursor(state.results.cursor == i, choiceShow, m.styles.toEnter)
+			choiceShow = wrapWithCursor(state.results.cursor == i, choiceShow, m.styles.correct)
 			choiceShow = menuItemsStyle.Render(choiceShow)
 			menuItems = append(menuItems, choiceShow)
 		}
@@ -160,6 +161,10 @@ func (m model) View() string {
 
 		fullParagraph := lipgloss.JoinVertical(lipgloss.Center, resultsStyle.Padding(1).Render(wpm), resultsStyle.Padding(0).Render(statsLine1))
 		s = lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, fullParagraph)
+
+	case Replay:
+		s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("Replay View", m.styles.toEnter))
+		s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter))
 	}
 
 	return s

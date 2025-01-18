@@ -252,6 +252,14 @@ func (wordCountTestResults WordCountTestResults) handleInput(msg tea.Msg) State 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
+		case "enter":
+			if wordCountTestResults.results.resultsSelection[newCursor] == "Next Test" {
+				return initWordCountTest(wordCountTestResults.results.mainMenu)
+			} else if wordCountTestResults.results.resultsSelection[newCursor] == "Main Menu" {
+				return initMainMenu()
+			} else if wordCountTestResults.results.resultsSelection[newCursor] == "Replay" {
+				return wordCountTestResults.showReplay()
+			}
 		case "left", "h":
 			if wordCountTestResults.results.cursor == 0 {
 				newCursor = len(wordCountTestResults.results.resultsSelection) - 1
@@ -347,7 +355,7 @@ func handleCharacterInputZenMode(msg tea.KeyMsg, base *TestBase) {
 func recordInput(msg tea.KeyMsg, state *WordCountTest) {
 	keyPress := KeyPress{
 		key:       string(msg.Runes[:]),
-		timestamp: state.stopwatch.stopwatch.Elapsed(),
+		timestamp: state.stopwatch.stopwatch.Elapsed().Milliseconds(),
 	}
 	state.base.testRecord = append(state.base.testRecord, keyPress)
 }

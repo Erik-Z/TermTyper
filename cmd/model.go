@@ -37,7 +37,7 @@ type TestBase struct {
 
 type KeyPress struct {
 	key       string
-	timestamp time.Duration
+	timestamp int64
 }
 
 type mistakes struct {
@@ -92,6 +92,8 @@ type Results struct {
 	cpm              int
 	time             time.Duration
 	wordList         string
+	testRecord       []KeyPress
+	wordsToEnter     []rune
 	wpmEachSecond    []float64
 	mainMenu         MainMenu
 	resultsSelection []string

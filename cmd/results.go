@@ -35,6 +35,8 @@ func (test WordCountTest) calculateResults() Results {
 		time:          test.stopwatch.stopwatch.Elapsed(),
 		mainMenu:      test.base.mainMenu,
 		wpmEachSecond: test.base.wpmEachSecond,
+		testRecord:    test.base.testRecord,
+		wordsToEnter:  test.base.wordsToEnter,
 		resultsSelection: []string{
 			"Next Test",
 			"Main Menu",
@@ -70,4 +72,12 @@ func (base TestBase) calculateAccuracy() float64 {
 	mistakesRate := float64(base.mistakes.rawMistakesCnt*100) / float64(base.rawInputCount)
 	accuracy := 100 - mistakesRate
 	return accuracy
+}
+
+func (result *WordCountTestResults) showReplay() Replay {
+	return Replay{
+		wordsToEnter: result.results.wordsToEnter,
+		testRecord:   result.results.testRecord,
+		results:      result,
+	}
 }

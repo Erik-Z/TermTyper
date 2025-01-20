@@ -57,7 +57,7 @@ func initWordCountTest(menu MainMenu) WordCountTest {
 	menu.wordTestWordGenerator.Count = 30
 	return WordCountTest{
 		stopwatch: StopWatch{
-			stopwatch: stopwatch.NewWithInterval(time.Millisecond),
+			stopwatch: stopwatch.NewWithInterval(time.Millisecond * 100),
 			isRunning: false,
 		},
 		base: TestBase{

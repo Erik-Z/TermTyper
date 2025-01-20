@@ -225,7 +225,12 @@ func (base *TestBase) renderInput(styles Styles) string {
 
 		for _, mistakeAt := range mistakes {
 			sliceUntilMistake := base.inputBuffer[previousMistake+1 : mistakeAt]
-			mistakeSlice := base.wordsToEnter[mistakeAt : mistakeAt+1]
+
+			var mistakeSlice []rune
+			mistakeSlice = base.wordsToEnter[mistakeAt : mistakeAt+1]
+			if string(mistakeSlice) == " " {
+				mistakeSlice = base.inputBuffer[mistakeAt : mistakeAt+1]
+			}
 
 			input.WriteString(styleAll(sliceUntilMistake, styles.correct))
 			input.WriteString(style(string(mistakeSlice), styles.mistake))

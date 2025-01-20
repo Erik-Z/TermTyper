@@ -3,6 +3,9 @@ package cmd
 import (
 	"math"
 	"strings"
+	"time"
+
+	"github.com/charmbracelet/bubbles/stopwatch"
 )
 
 func (test TimerTest) calculateResults() Results {
@@ -35,8 +38,18 @@ func (test WordCountTest) calculateResults() Results {
 		time:          test.stopwatch.stopwatch.Elapsed(),
 		mainMenu:      test.base.mainMenu,
 		wpmEachSecond: test.base.wpmEachSecond,
-		testRecord:    test.base.testRecord,
-		wordsToEnter:  test.base.wordsToEnter,
+		test: TestBase{
+			wordsToEnter:  test.base.wordsToEnter,
+			inputBuffer:   make([]rune, 0),
+			rawInputCount: 0,
+			mistakes: mistakes{
+				mistakesAt:     make(map[int]bool, 0),
+				rawMistakesCnt: 0,
+			},
+			cursor:     0,
+			testRecord: test.base.testRecord,
+			mainMenu:   test.base.mainMenu,
+		},
 		resultsSelection: []string{
 			"Next Test",
 			"Main Menu",
@@ -76,8 +89,11 @@ func (base TestBase) calculateAccuracy() float64 {
 
 func (result *WordCountTestResults) showReplay() Replay {
 	return Replay{
-		wordsToEnter: result.results.wordsToEnter,
-		testRecord:   result.results.testRecord,
-		results:      result,
+		test:    result.results.test,
+		results: result,
+		stopwatch: StopWatch{
+			stopwatch: stopwatch.NewWithInterval(time.Millisecond),
+			isRunning: false,
+		},
 	}
 }

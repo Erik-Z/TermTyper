@@ -163,7 +163,20 @@ func (m model) View() string {
 		s = lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, fullParagraph)
 
 	case Replay:
-		s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("Replay View", m.styles.toEnter))
+		stopwatchViewSeconds := strconv.FormatFloat(state.stopwatch.stopwatch.Elapsed().Seconds(), 'f', 0, 64) + "s"
+		stopwatch := style(stopwatchViewSeconds, m.styles.magenta)
+		paragraphView := state.test.renderParagraph(lineLenLimit, m.styles)
+		lines := strings.Split(paragraphView, "\n")
+		cursorLine := findCursorLine(strings.Split(paragraphView, "\n"), state.test.cursor)
+
+		linesAroundCursor := strings.Join(getLinesAroundCursor(lines, cursorLine), "\n")
+
+		s += positionVertically(termHeight)
+		avgLineLen := averageLineLen(lines)
+		indentBy := uint(math.Max(0, float64(termWidth/2-avgLineLen/2)))
+
+		s += m.indent(stopwatch, indentBy) + "\n\n" + m.indent(linesAroundCursor, indentBy)
+		s += "\n\n\n"
 		s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter))
 	}
 

@@ -36,7 +36,7 @@ type TestBase struct {
 }
 
 type KeyPress struct {
-	key       string
+	key       rune
 	timestamp int64
 }
 
@@ -75,9 +75,9 @@ type WordCountTest struct {
 }
 
 type Replay struct {
-	wordsToEnter []rune
-	testRecord   []KeyPress
-	results      *WordCountTestResults
+	test      TestBase
+	results   *WordCountTestResults
+	stopwatch StopWatch
 }
 
 type TestResults interface {
@@ -92,8 +92,7 @@ type Results struct {
 	cpm              int
 	time             time.Duration
 	wordList         string
-	testRecord       []KeyPress
-	wordsToEnter     []rune
+	test             TestBase
 	wpmEachSecond    []float64
 	mainMenu         MainMenu
 	resultsSelection []string

@@ -75,7 +75,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						state.timer.isRunning = true
 					}
 
-					handleCharacterInput(msg, &state.base)
+					handleCharacterInputFromMsg(msg, &state.base)
 					m.state = state
 				}
 			}
@@ -165,6 +165,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.state = state
 			case "backspace":
 				handleBackspace(&state.base)
+				recordInput(msg, &state)
 				m.state = state
 			default:
 				switch msg.Type {
@@ -174,7 +175,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 						state.stopwatch.isRunning = true
 					}
 
-					handleCharacterInput(msg, &state.base)
+					handleCharacterInputFromMsg(msg, &state.base)
 					recordInput(msg, &state)
 
 					m.state = state
@@ -207,6 +208,49 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		m.state = state.handleInput(msg)
+
+	case Replay:
+		switch msg := msg.(type) {
+		case stopwatch.StartStopMsg:
+			stopwatchUpdate, cmdUpdate := state.stopwatch.stopwatch.Update(msg)
+			state.stopwatch.stopwatch = stopwatchUpdate
+			commands = append(commands, cmdUpdate)
+
+			m.state = state
+		case stopwatch.TickMsg:
+			stopwatchUpdate, cmdUpdate := state.stopwatch.stopwatch.Update(msg)
+			state.stopwatch.stopwatch = stopwatchUpdate
+			commands = append(commands, cmdUpdate)
+
+			m.state = state
+		}
+
+		if !state.stopwatch.isRunning && len(state.test.testRecord) > 0 {
+			commands = append(commands, state.stopwatch.stopwatch.Init())
+			state.stopwatch.isRunning = true
+		}
+
+		if len(state.test.testRecord) > 0 {
+			currentKeyPress := state.test.testRecord[0]
+			if currentKeyPress.timestamp <= state.stopwatch.stopwatch.Elapsed().Milliseconds() {
+				switch currentKeyPress.key {
+				case '\b':
+					handleBackspace(&state.test)
+				default:
+					handleCharacterInputFromRune(currentKeyPress.key, &state.test)
+				}
+				state.test.testRecord = state.test.testRecord[1:]
+			}
+		}
+
+		if len(state.test.wordsToEnter) == len(state.test.inputBuffer) &&
+			!state.test.mistakes.mistakesAt[len(state.test.inputBuffer)-1] {
+
+			commands = append(commands, state.stopwatch.stopwatch.Stop())
+			state.stopwatch.isRunning = false
+		}
+
+		m.state = state
 	}
 
 	return m, tea.Batch(commands...)
@@ -323,7 +367,7 @@ func handleCtrlBackspace(base *TestBase) {
 	base.cursor = base.cursor - charToDelete
 }
 
-func handleCharacterInput(msg tea.KeyMsg, base *TestBase) {
+func handleCharacterInputFromMsg(msg tea.KeyMsg, base *TestBase) {
 	if len(base.inputBuffer) == len(base.wordsToEnter) {
 		return
 	}
@@ -343,6 +387,25 @@ func handleCharacterInput(msg tea.KeyMsg, base *TestBase) {
 	base.cursor = newCursorPosition
 }
 
+func handleCharacterInputFromRune(char rune, base *TestBase) {
+	if len(base.inputBuffer) == len(base.wordsToEnter) {
+		return
+	}
+	currInputBufferLen := len(base.inputBuffer)
+	correctNextLetter := base.wordsToEnter[currInputBufferLen]
+
+	base.inputBuffer = append(base.inputBuffer, char)
+	base.rawInputCount += 1
+
+	if char != correctNextLetter {
+		base.mistakes.mistakesAt[currInputBufferLen] = true
+		base.mistakes.rawMistakesCnt = base.mistakes.rawMistakesCnt + 1
+	}
+
+	newCursorPosition := len(base.inputBuffer)
+	base.cursor = newCursorPosition
+}
+
 func handleCharacterInputZenMode(msg tea.KeyMsg, base *TestBase) {
 	inputLetter := msg.Runes[len(msg.Runes)-1]
 	base.inputBuffer = append(base.inputBuffer, inputLetter)
@@ -353,9 +416,18 @@ func handleCharacterInputZenMode(msg tea.KeyMsg, base *TestBase) {
 }
 
 func recordInput(msg tea.KeyMsg, state *WordCountTest) {
-	keyPress := KeyPress{
-		key:       string(msg.Runes[:]),
-		timestamp: state.stopwatch.stopwatch.Elapsed().Milliseconds(),
+	var keyPress KeyPress
+	if msg.String() == "backspace" {
+		keyPress = KeyPress{
+			key:       '\b',
+			timestamp: state.stopwatch.stopwatch.Elapsed().Milliseconds(),
+		}
+	} else {
+		keyPress = KeyPress{
+			key:       msg.Runes[len(msg.Runes)-1],
+			timestamp: state.stopwatch.stopwatch.Elapsed().Milliseconds(),
+		}
 	}
+
 	state.base.testRecord = append(state.base.testRecord, keyPress)
 }

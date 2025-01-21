@@ -1,2 +1,4 @@
 .vscode/*
-.vscode/launch.json
+/.vscode/launch.json
+/id_rsa
+/id_rsa.pub

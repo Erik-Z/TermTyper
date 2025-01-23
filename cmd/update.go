@@ -134,12 +134,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case WordCountTest:
 		switch msg := msg.(type) {
 		case stopwatch.StartStopMsg:
+
 			stopwatchUpdate, cmdUpdate := state.stopwatch.stopwatch.Update(msg)
 			state.stopwatch.stopwatch = stopwatchUpdate
 			commands = append(commands, cmdUpdate)
 
 			m.state = state
+
 		case stopwatch.TickMsg:
+
 			stopwatchUpdate, cmdUpdate := state.stopwatch.stopwatch.Update(msg)
 			state.stopwatch.stopwatch = stopwatchUpdate
 			commands = append(commands, cmdUpdate)
@@ -341,7 +344,7 @@ func handleBackspace(base *TestBase) {
 }
 
 func handleCtrlBackspace(base *TestBase) {
-	//TODO: Fix this for Zen Mode
+	//TODO: Fix this
 	//TODO if multiple punctuation is in a row we delete the punctuations
 	if len(base.mistakes.mistakesAt) == 0 && len(base.wordsToEnter) > 0 {
 		return

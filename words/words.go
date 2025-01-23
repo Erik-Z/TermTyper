@@ -9,7 +9,6 @@ import (
 
 //TODO: Add capitalization and punctuation to the random words
 //TODO: Add quote test.
-//TODO: Add zen mode
 
 //go:embed embeds/common-english.json
 var commonWords string

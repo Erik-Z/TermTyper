@@ -172,7 +172,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.state = state
 			default:
 				switch msg.Type {
-				case tea.KeyRunes:
+				case tea.KeyRunes, tea.KeySpace:
 					if !state.stopwatch.isRunning {
 						commands = append(commands, state.stopwatch.stopwatch.Init())
 						state.stopwatch.isRunning = true

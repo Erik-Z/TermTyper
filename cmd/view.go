@@ -177,7 +177,14 @@ func (m model) View() string {
 
 		s += m.indent(stopwatch, indentBy) + "\n\n" + m.indent(linesAroundCursor, indentBy)
 		s += "\n\n\n"
-		s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter))
+
+		if state.isReplayInProcess {
+			s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("Replay in progress..", m.styles.toEnter))
+
+		} else {
+			s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("Press any key to start Replay", m.styles.toEnter))
+		}
+
 	}
 
 	return s

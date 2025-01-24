@@ -226,34 +226,41 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			commands = append(commands, cmdUpdate)
 
 			m.state = state
-		}
-
-		if !state.stopwatch.isRunning && len(state.test.testRecord) > 0 {
-			commands = append(commands, state.stopwatch.stopwatch.Init())
-			state.stopwatch.isRunning = true
-		}
-
-		if len(state.test.testRecord) > 0 {
-			currentKeyPress := state.test.testRecord[0]
-			if currentKeyPress.timestamp <= state.stopwatch.stopwatch.Elapsed().Milliseconds() {
-				switch currentKeyPress.key {
-				case '\b':
-					handleBackspace(&state.test)
-				default:
-					handleCharacterInputFromRune(currentKeyPress.key, &state.test)
-				}
-				state.test.testRecord = state.test.testRecord[1:]
+		case tea.KeyMsg:
+			if !state.isReplayInProcess {
+				state.isReplayInProcess = true
+				m.state = state
 			}
 		}
 
-		if len(state.test.wordsToEnter) == len(state.test.inputBuffer) &&
-			!state.test.mistakes.mistakesAt[len(state.test.inputBuffer)-1] {
+		if state.isReplayInProcess {
+			if !state.stopwatch.isRunning && len(state.test.testRecord) > 0 {
+				commands = append(commands, state.stopwatch.stopwatch.Init())
+				state.stopwatch.isRunning = true
+			}
 
-			commands = append(commands, state.stopwatch.stopwatch.Stop())
-			state.stopwatch.isRunning = false
+			if len(state.test.testRecord) > 0 {
+				currentKeyPress := state.test.testRecord[0]
+				if currentKeyPress.timestamp <= state.stopwatch.stopwatch.Elapsed().Milliseconds() {
+					switch currentKeyPress.key {
+					case '\b':
+						handleBackspace(&state.test)
+					default:
+						handleCharacterInputFromRune(currentKeyPress.key, &state.test)
+					}
+					state.test.testRecord = state.test.testRecord[1:]
+				}
+			}
+
+			if len(state.test.wordsToEnter) == len(state.test.inputBuffer) &&
+				!state.test.mistakes.mistakesAt[len(state.test.inputBuffer)-1] {
+
+				commands = append(commands, state.stopwatch.stopwatch.Stop())
+				state.stopwatch.isRunning = false
+			}
+
+			m.state = state
 		}
-
-		m.state = state
 	}
 
 	return m, tea.Batch(commands...)

@@ -75,9 +75,10 @@ type WordCountTest struct {
 }
 
 type Replay struct {
-	test      TestBase
-	results   *WordCountTestResults
-	stopwatch StopWatch
+	test              TestBase
+	results           *WordCountTestResults
+	stopwatch         StopWatch
+	isReplayInProcess bool
 }
 
 type TestResults interface {

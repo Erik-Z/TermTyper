@@ -89,8 +89,9 @@ func (base TestBase) calculateAccuracy() float64 {
 
 func (result *WordCountTestResults) showReplay() Replay {
 	return Replay{
-		test:    result.results.test,
-		results: result,
+		test:              result.results.test,
+		results:           result,
+		isReplayInProcess: false,
 		stopwatch: StopWatch{
 			stopwatch: stopwatch.NewWithInterval(time.Millisecond),
 			isRunning: false,

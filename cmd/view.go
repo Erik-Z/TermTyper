@@ -185,6 +185,8 @@ func (m model) View() string {
 			s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("Press any key to start Replay", m.styles.toEnter))
 		}
 
+	case Register:
+		s = state.renderRegisterScreen(m)
 	}
 
 	return s

@@ -261,6 +261,44 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			m.state = state
 		}
+
+	case Register:
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "tab", "shift+tab", "enter", "up", "down":
+				s := msg.String()
+
+				if s == "enter" && state.cursor == len(state.inputs) {
+					m.state = initMainMenu()
+				} else {
+					if s == "up" || s == "shift+tab" {
+						state.cursor--
+					} else {
+						state.cursor++
+					}
+
+					if state.cursor > len(state.inputs)+1 {
+						state.cursor = 0
+					} else if state.cursor < 0 {
+						state.cursor = len(state.inputs)
+					}
+
+					cmds := make([]tea.Cmd, len(state.inputs))
+					for i := 0; i <= len(state.inputs)-1; i++ {
+						state.inputs[i].Blur()
+						if i == state.cursor {
+							cmds[i] = state.inputs[i].Focus()
+							continue
+						}
+					}
+
+					m.state = state
+					commands = append(commands, cmds...)
+				}
+			}
+		}
+		commands = append(commands, state.updateInputs(msg)...)
 	}
 
 	return m, tea.Batch(commands...)

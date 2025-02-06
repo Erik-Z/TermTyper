@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"runtime"
+	"termtyper/database"
 	"termtyper/words"
 	"time"
 
@@ -97,9 +98,10 @@ func initZenMode(menu MainMenu) ZenMode {
 
 func initModel(termProfile termenv.Profile, foregroundColor termenv.Color, width, height int) model {
 	return model{
-		state:  initMainMenu(),
-		width:  width,
-		height: height,
+		state:   initRegisterScreen(),
+		width:   width,
+		height:  height,
+		context: database.InitDB(),
 		styles: Styles{
 			correct: func(str string) termenv.Style {
 				return termenv.String(str).Foreground(foregroundColor)

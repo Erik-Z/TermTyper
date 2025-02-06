@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"termtyper/database"
 	"termtyper/words"
 	"time"
 
@@ -13,6 +14,7 @@ type model struct {
 	state         State
 	styles        Styles
 	width, height int
+	context       database.Context
 }
 
 type State interface{}

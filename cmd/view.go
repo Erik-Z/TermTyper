@@ -187,6 +187,12 @@ func (m model) View() string {
 
 	case Register:
 		s = state.renderRegisterScreen(m)
+
+	case PreAuthentication:
+		s = state.renderPreAuthentication(m)
+
+	case Login:
+		s = state.renderLoginScreen(m)
 	}
 
 	return s

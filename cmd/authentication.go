@@ -1,14 +1,12 @@
 package cmd
 
 import (
-	"crypto/rand"
-	"encoding/base64"
 	"fmt"
+	"reflect"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"golang.org/x/crypto/bcrypt"
 )
 
 var (
@@ -33,10 +31,45 @@ type Register struct {
 	cursor int
 }
 
+type PreAuthentication struct {
+	authMenu []State
+	cursor   int
+}
+
 type ForgotPassword struct {
+	emailInput textinput.Model
 }
 
 type ResetPassword struct {
+	inputs []textinput.Model
+	cursor int
+}
+
+func initLoginScreen() Login {
+	inputs := make([]textinput.Model, 2)
+	var t textinput.Model
+	for i := range inputs {
+		t = textinput.New()
+		t.CharLimit = 32
+
+		switch i {
+		case 0:
+			t.Placeholder = "Email"
+			t.CharLimit = 64
+			t.Focus()
+		case 1:
+			t.Placeholder = "Password"
+			t.CharLimit = 32
+			t.EchoMode = textinput.EchoPassword
+			t.EchoCharacter = '•'
+		}
+
+		inputs[i] = t
+	}
+	return Login{
+		inputs: inputs,
+		cursor: 0,
+	}
 }
 
 func initRegisterScreen() Register {
@@ -68,7 +101,38 @@ func initRegisterScreen() Register {
 
 	return Register{
 		inputs: inputs,
+		cursor: 0,
 	}
+}
+
+func initPreAuthentication() PreAuthentication {
+	return PreAuthentication{
+		authMenu: []State{
+			initRegisterScreen(),
+			initLoginScreen(),
+		},
+		cursor: 0,
+	}
+}
+
+func (l Login) renderLoginScreen(m model) string {
+	termWidth, termHeight := m.width-2, m.height-2
+	register := style("Login", m.styles.magenta)
+	register = lipgloss.NewStyle().PaddingBottom(1).Render(register)
+
+	var inputStrings []string
+
+	for _, input := range l.inputs {
+		inputStrings = append(inputStrings, input.View())
+	}
+
+	inputStrings = append(inputStrings, wrapWithCursor(l.cursor == len(l.inputs), focusedButton, m.styles.toEnter))
+
+	joined := lipgloss.JoinVertical(lipgloss.Left, append([]string{register}, inputStrings...)...)
+	s := lipgloss.NewStyle().Align(lipgloss.Left).Render(joined)
+	centeredText := lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, s)
+
+	return centeredText
 }
 
 func (r Register) renderRegisterScreen(m model) string {
@@ -91,6 +155,131 @@ func (r Register) renderRegisterScreen(m model) string {
 	return centeredText
 }
 
+func (p PreAuthentication) renderPreAuthentication(m model) string {
+	termWidth, termHeight := m.width-2, m.height-2
+	termtyper := style("TermTyper", m.styles.magenta)
+	termtyper = lipgloss.NewStyle().PaddingBottom(1).Render(termtyper)
+
+	var authMenu []string
+	menuItemsStyle := lipgloss.NewStyle().PaddingTop(1)
+
+	for i, choice := range p.authMenu {
+		choiceShow := style(reflect.TypeOf(choice).Name(), m.styles.toEnter)
+
+		choiceShow = wrapWithCursor(p.cursor == i, choiceShow, m.styles.toEnter)
+		choiceShow = menuItemsStyle.Render(choiceShow)
+		authMenu = append(authMenu, choiceShow)
+	}
+
+	joined := lipgloss.JoinVertical(lipgloss.Left, append([]string{termtyper}, authMenu...)...)
+	s := lipgloss.NewStyle().Align(lipgloss.Left).Render(joined)
+	centeredText := lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, s)
+
+	return centeredText
+}
+
+func (state *Login) updateLogin(msg tea.Msg) (State, []tea.Cmd) {
+	cmds := make([]tea.Cmd, len(state.inputs))
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "tab", "shift+tab", "enter", "up", "down":
+			s := msg.String()
+
+			if s == "enter" && state.cursor == len(state.inputs) {
+				return initMainMenu(), []tea.Cmd{}
+			} else {
+				if s == "up" || s == "shift+tab" {
+					state.cursor--
+				} else {
+					state.cursor++
+				}
+
+				if state.cursor > len(state.inputs)+1 {
+					state.cursor = 0
+				} else if state.cursor < 0 {
+					state.cursor = len(state.inputs)
+				}
+
+				for i := 0; i <= len(state.inputs)-1; i++ {
+					state.inputs[i].Blur()
+					if i == state.cursor {
+						cmds[i] = state.inputs[i].Focus()
+						continue
+					}
+				}
+			}
+		}
+	}
+
+	return *state, cmds
+}
+
+func (state *Register) updateRegister(msg tea.Msg) (State, []tea.Cmd) {
+	cmds := make([]tea.Cmd, len(state.inputs))
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "tab", "shift+tab", "enter", "up", "down":
+			s := msg.String()
+
+			if s == "enter" && state.cursor == len(state.inputs) {
+				return initMainMenu(), []tea.Cmd{}
+			} else {
+				if s == "up" || s == "shift+tab" {
+					state.cursor--
+				} else {
+					state.cursor++
+				}
+
+				if state.cursor > len(state.inputs)+1 {
+					state.cursor = 0
+				} else if state.cursor < 0 {
+					state.cursor = len(state.inputs)
+				}
+
+				for i := 0; i <= len(state.inputs)-1; i++ {
+					state.inputs[i].Blur()
+					if i == state.cursor {
+						cmds[i] = state.inputs[i].Focus()
+						continue
+					}
+				}
+			}
+		}
+	}
+
+	return *state, cmds
+}
+
+func (state *PreAuthentication) updatePreAuthentication(msg tea.Msg) State {
+
+	newCursor := state.cursor
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "enter":
+			return state.authMenu[newCursor]
+
+		case "up", "k":
+			if state.cursor == 0 {
+				newCursor = len(state.authMenu) - 1
+			} else {
+				newCursor--
+			}
+
+		case "down", "j":
+			if state.cursor == len(state.authMenu)-1 {
+				newCursor = 0
+			} else {
+				newCursor++
+			}
+		}
+	}
+	state.cursor = newCursor
+	return *state
+}
+
 func (state *Register) updateInputs(msg tea.Msg) []tea.Cmd {
 	cmds := make([]tea.Cmd, len(state.inputs))
 
@@ -101,25 +290,12 @@ func (state *Register) updateInputs(msg tea.Msg) []tea.Cmd {
 	return cmds
 }
 
-func generateSalt() (string, error) {
-	salt := make([]byte, 16)
-	_, err := rand.Read(salt)
-	if err != nil {
-		return "", err
+func (state *Login) updateInputs(msg tea.Msg) []tea.Cmd {
+	cmds := make([]tea.Cmd, len(state.inputs))
+
+	for i := range state.inputs {
+		state.inputs[i], cmds[i] = state.inputs[i].Update(msg)
 	}
-	return base64.StdEncoding.EncodeToString(salt), nil
-}
 
-func hashPassword(password, salt string) (string, error) {
-	saltedPassword := password + salt
-
-	bytes, err := bcrypt.GenerateFromPassword([]byte(saltedPassword), bcrypt.DefaultCost)
-	return string(bytes), err
-}
-
-func checkPasswordHash(password, hash, salt string) bool {
-	saltedPassword := password + salt
-
-	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(saltedPassword))
-	return err == nil
+	return cmds
 }

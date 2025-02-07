@@ -98,7 +98,7 @@ func initZenMode(menu MainMenu) ZenMode {
 
 func initModel(termProfile termenv.Profile, foregroundColor termenv.Color, width, height int) model {
 	return model{
-		state:   initRegisterScreen(),
+		state:   initPreAuthentication(),
 		width:   width,
 		height:  height,
 		context: database.InitDB(),

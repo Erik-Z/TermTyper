@@ -4,8 +4,11 @@ import (
 	"fmt"
 	"reflect"
 
+	"net/mail"
+
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
 
@@ -27,8 +30,15 @@ type Login struct {
 }
 
 type Register struct {
-	inputs []textinput.Model
-	cursor int
+	form              *huh.Form
+	formData          RegisterFormData
+	isFormInitialized bool
+}
+
+type RegisterFormData struct {
+	email           string
+	password        string
+	confirmPassword string
 }
 
 type PreAuthentication struct {
@@ -73,35 +83,46 @@ func initLoginScreen() Login {
 }
 
 func initRegisterScreen() Register {
-
-	inputs := make([]textinput.Model, 3)
-	var t textinput.Model
-	for i := range inputs {
-		t = textinput.New()
-		t.CharLimit = 32
-
-		switch i {
-		case 0:
-			t.Placeholder = "Email"
-			t.CharLimit = 64
-			t.Focus()
-		case 1:
-			t.Placeholder = "Password"
-			t.CharLimit = 32
-			t.EchoMode = textinput.EchoPassword
-			t.EchoCharacter = '•'
-		case 2:
-			t.Placeholder = "Confirm Password"
-			t.EchoMode = textinput.EchoPassword
-			t.EchoCharacter = '•'
-		}
-
-		inputs[i] = t
-	}
+	data := RegisterFormData{}
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Email").
+				Value(&data.email).
+				Validate(func(str string) error {
+					_, err := mail.ParseAddress(str)
+					if err == nil {
+						return nil
+					}
+					return fmt.Errorf("invalid email address")
+				}),
+			huh.NewInput().
+				Title("password").
+				Value(&data.password).
+				EchoMode(huh.EchoModePassword).
+				Validate(func(str string) error {
+					if len(str) < 8 {
+						return fmt.Errorf("password must be at least 8 characters")
+					}
+					return nil
+				}),
+			huh.NewInput().
+				Title("Confirm password").
+				Value(&data.confirmPassword).
+				EchoMode(huh.EchoModePassword).
+				Validate(func(str string) error {
+					if str != data.password {
+						return fmt.Errorf("password must match")
+					}
+					return nil
+				}),
+		),
+	)
 
 	return Register{
-		inputs: inputs,
-		cursor: 0,
+		form:              form,
+		formData:          data,
+		isFormInitialized: false,
 	}
 }
 
@@ -140,15 +161,7 @@ func (r Register) renderRegisterScreen(m model) string {
 	register := style("Register", m.styles.magenta)
 	register = lipgloss.NewStyle().PaddingBottom(1).Render(register)
 
-	var inputStrings []string
-
-	for _, input := range r.inputs {
-		inputStrings = append(inputStrings, input.View())
-	}
-
-	inputStrings = append(inputStrings, wrapWithCursor(r.cursor == len(r.inputs), focusedButton, m.styles.toEnter))
-
-	joined := lipgloss.JoinVertical(lipgloss.Left, append([]string{register}, inputStrings...)...)
+	joined := lipgloss.JoinVertical(lipgloss.Center, []string{register, r.form.View()}...)
 	s := lipgloss.NewStyle().Align(lipgloss.Left).Render(joined)
 	centeredText := lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, s)
 
@@ -215,43 +228,6 @@ func (state *Login) updateLogin(msg tea.Msg) (State, []tea.Cmd) {
 	return *state, cmds
 }
 
-func (state *Register) updateRegister(msg tea.Msg) (State, []tea.Cmd) {
-	cmds := make([]tea.Cmd, len(state.inputs))
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "tab", "shift+tab", "enter", "up", "down":
-			s := msg.String()
-
-			if s == "enter" && state.cursor == len(state.inputs) {
-				return initMainMenu(), []tea.Cmd{}
-			} else {
-				if s == "up" || s == "shift+tab" {
-					state.cursor--
-				} else {
-					state.cursor++
-				}
-
-				if state.cursor > len(state.inputs)+1 {
-					state.cursor = 0
-				} else if state.cursor < 0 {
-					state.cursor = len(state.inputs)
-				}
-
-				for i := 0; i <= len(state.inputs)-1; i++ {
-					state.inputs[i].Blur()
-					if i == state.cursor {
-						cmds[i] = state.inputs[i].Focus()
-						continue
-					}
-				}
-			}
-		}
-	}
-
-	return *state, cmds
-}
-
 func (state *PreAuthentication) updatePreAuthentication(msg tea.Msg) State {
 
 	newCursor := state.cursor
@@ -278,16 +254,6 @@ func (state *PreAuthentication) updatePreAuthentication(msg tea.Msg) State {
 	}
 	state.cursor = newCursor
 	return *state
-}
-
-func (state *Register) updateInputs(msg tea.Msg) []tea.Cmd {
-	cmds := make([]tea.Cmd, len(state.inputs))
-
-	for i := range state.inputs {
-		state.inputs[i], cmds[i] = state.inputs[i].Update(msg)
-	}
-
-	return cmds
 }
 
 func (state *Login) updateInputs(msg tea.Msg) []tea.Cmd {

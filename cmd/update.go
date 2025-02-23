@@ -4,11 +4,14 @@ import (
 	"github.com/charmbracelet/bubbles/stopwatch"
 	"github.com/charmbracelet/bubbles/timer"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/huh"
 )
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var commands []tea.Cmd
 	switch msg := msg.(type) {
+	case forceRenderMsg:
+
 	case tea.WindowSizeMsg:
 		if msg.Width == 0 && msg.Height == 0 {
 			return m, nil
@@ -263,10 +266,22 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case Register:
-		newState, cmds := state.updateRegister(msg)
-		m.state = newState
-		commands = append(commands, cmds...)
-		commands = append(commands, state.updateInputs(msg)...)
+		if !state.isFormInitialized {
+			initCmd := state.form.Init()
+			commands = append(commands, initCmd)
+			state.isFormInitialized = true
+		}
+
+		updatedForm, formCmd := state.form.Update(msg)
+		if f, ok := updatedForm.(*huh.Form); ok {
+			state.form = f
+			commands = append(commands, formCmd)
+		}
+
+		// newState, cmds := state.updateRegister(msg)
+		// m.state = newState
+		// commands = append(commands, cmds...)
+		// commands = append(commands, state.updateInputs(msg)...)
 
 	case Login:
 		newState, cmds := state.updateLogin(msg)
@@ -276,9 +291,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case PreAuthentication:
 		m.state = state.updatePreAuthentication(msg)
+		// force a rerender if state is Register
+		if _, ok := m.state.(Register); ok {
+			commands = append(commands, forceRender())
+		}
 	}
 
 	return m, tea.Batch(commands...)
+}
+
+type forceRenderMsg struct{}
+
+func forceRender() tea.Cmd {
+	return func() tea.Msg {
+		return forceRenderMsg{}
+	}
 }
 
 func (menu MainMenu) handleInput(msg tea.Msg) State {

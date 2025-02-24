@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
+	"log"
 
 	"golang.org/x/crypto/bcrypt"
 	_ "modernc.org/sqlite"
@@ -36,7 +37,18 @@ func initUserDB() (*sql.DB, error) {
 	return db, nil
 }
 
-func createUser(db *sql.DB, email, password string) error {
+func CheckEmailExists(db *sql.DB, email string) bool {
+	err := db.QueryRow("SELECT email FROM users WHERE email = ?", email).Scan(&email)
+	switch {
+	case err == sql.ErrNoRows:
+		return false
+	case err != nil:
+		log.Fatalf("query error: %v\n", err)
+	}
+	return true
+}
+
+func CreateUser(db *sql.DB, email, password string) error {
 	salt, err := generateSalt()
 	if err != nil {
 		return err

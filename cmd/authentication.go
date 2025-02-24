@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"reflect"
+	"termtyper/database"
 
 	"net/mail"
 
@@ -31,7 +32,7 @@ type Login struct {
 
 type Register struct {
 	form              *huh.Form
-	formData          RegisterFormData
+	formData          *RegisterFormData
 	isFormInitialized bool
 }
 
@@ -82,8 +83,8 @@ func initLoginScreen() Login {
 	}
 }
 
-func initRegisterScreen() Register {
-	data := RegisterFormData{}
+func initRegisterScreen(context database.Context) Register {
+	data := &RegisterFormData{}
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
@@ -91,10 +92,12 @@ func initRegisterScreen() Register {
 				Value(&data.email).
 				Validate(func(str string) error {
 					_, err := mail.ParseAddress(str)
-					if err == nil {
-						return nil
+					if err != nil {
+						return fmt.Errorf("invalid email address")
+					} else if database.CheckEmailExists(context.UserRepository, str) {
+						return fmt.Errorf("email already exists")
 					}
-					return fmt.Errorf("invalid email address")
+					return nil
 				}),
 			huh.NewInput().
 				Title("password").
@@ -126,10 +129,10 @@ func initRegisterScreen() Register {
 	}
 }
 
-func initPreAuthentication() PreAuthentication {
+func initPreAuthentication(context database.Context) PreAuthentication {
 	return PreAuthentication{
 		authMenu: []State{
-			initRegisterScreen(),
+			initRegisterScreen(context),
 			initLoginScreen(),
 		},
 		cursor: 0,

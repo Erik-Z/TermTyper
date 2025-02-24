@@ -97,11 +97,12 @@ func initZenMode(menu MainMenu) ZenMode {
 }
 
 func initModel(termProfile termenv.Profile, foregroundColor termenv.Color, width, height int) model {
+	databaseContext := database.InitDB()
 	return model{
-		state:   initPreAuthentication(),
+		state:   initPreAuthentication(databaseContext),
 		width:   width,
 		height:  height,
-		context: database.InitDB(),
+		context: databaseContext,
 		styles: Styles{
 			correct: func(str string) termenv.Style {
 				return termenv.String(str).Foreground(foregroundColor)

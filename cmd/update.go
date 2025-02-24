@@ -5,6 +5,8 @@ import (
 	"github.com/charmbracelet/bubbles/timer"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
+
+	"termtyper/database"
 )
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -275,13 +277,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		updatedForm, formCmd := state.form.Update(msg)
 		if f, ok := updatedForm.(*huh.Form); ok {
 			state.form = f
+			m.state = state
 			commands = append(commands, formCmd)
 		}
 
-		// newState, cmds := state.updateRegister(msg)
-		// m.state = newState
-		// commands = append(commands, cmds...)
-		// commands = append(commands, state.updateInputs(msg)...)
+		if state.form.State == huh.StateCompleted {
+			err := database.CreateUser(m.context.UserRepository, state.formData.email, state.formData.password)
+			if err == nil {
+				m.state = initMainMenu()
+			}
+		}
 
 	case Login:
 		newState, cmds := state.updateLogin(msg)

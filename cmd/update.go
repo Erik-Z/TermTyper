@@ -289,15 +289,25 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case Login:
-		newState, cmds := state.updateLogin(msg)
-		m.state = newState
-		commands = append(commands, cmds...)
-		commands = append(commands, state.updateInputs(msg)...)
+		if !state.isFormInitialized {
+			initCmd := state.form.Init()
+			commands = append(commands, initCmd)
+			state.isFormInitialized = true
+		}
+
+		updatedForm, formCmd := state.form.Update(msg)
+		if f, ok := updatedForm.(*huh.Form); ok {
+			state.form = f
+			m.state = state
+			commands = append(commands, formCmd)
+		}
 
 	case PreAuthentication:
 		m.state = state.updatePreAuthentication(msg)
-		// force a rerender if state is Register
 		if _, ok := m.state.(Register); ok {
+			commands = append(commands, forceRender())
+		}
+		if _, ok := m.state.(Login); ok {
 			commands = append(commands, forceRender())
 		}
 	}

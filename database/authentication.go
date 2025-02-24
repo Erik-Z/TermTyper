@@ -38,7 +38,7 @@ func initUserDB() (*sql.DB, error) {
 }
 
 func CheckEmailExists(db *sql.DB, email string) bool {
-	err := db.QueryRow("SELECT email FROM users WHERE email = ?", email).Scan(&email)
+	err := db.QueryRow("SELECT email FROM users WHERE email = ?", email).Scan()
 	switch {
 	case err == sql.ErrNoRows:
 		return false

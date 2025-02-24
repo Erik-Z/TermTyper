@@ -26,14 +26,20 @@ type TextInputState interface {
 }
 
 type Login struct {
-	inputs []textinput.Model
-	cursor int
+	form              *huh.Form
+	formData          *LoginFormData
+	isFormInitialized bool
 }
 
 type Register struct {
 	form              *huh.Form
 	formData          *RegisterFormData
 	isFormInitialized bool
+}
+
+type LoginFormData struct {
+	email    string
+	password string
 }
 
 type RegisterFormData struct {
@@ -57,29 +63,22 @@ type ResetPassword struct {
 }
 
 func initLoginScreen() Login {
-	inputs := make([]textinput.Model, 2)
-	var t textinput.Model
-	for i := range inputs {
-		t = textinput.New()
-		t.CharLimit = 32
-
-		switch i {
-		case 0:
-			t.Placeholder = "Email"
-			t.CharLimit = 64
-			t.Focus()
-		case 1:
-			t.Placeholder = "Password"
-			t.CharLimit = 32
-			t.EchoMode = textinput.EchoPassword
-			t.EchoCharacter = '•'
-		}
-
-		inputs[i] = t
-	}
+	data := &LoginFormData{}
+	form := huh.NewForm(
+		huh.NewGroup(
+			huh.NewInput().
+				Title("Email").
+				Value(&data.email),
+			huh.NewInput().
+				Title("password").
+				Value(&data.password).
+				EchoMode(huh.EchoModePassword),
+		),
+	)
 	return Login{
-		inputs: inputs,
-		cursor: 0,
+		form:              form,
+		formData:          data,
+		isFormInitialized: false,
 	}
 }
 
@@ -141,18 +140,10 @@ func initPreAuthentication(context database.Context) PreAuthentication {
 
 func (l Login) renderLoginScreen(m model) string {
 	termWidth, termHeight := m.width-2, m.height-2
-	register := style("Login", m.styles.magenta)
-	register = lipgloss.NewStyle().PaddingBottom(1).Render(register)
+	login := style("Login", m.styles.magenta)
+	login = lipgloss.NewStyle().PaddingBottom(1).Render(login)
 
-	var inputStrings []string
-
-	for _, input := range l.inputs {
-		inputStrings = append(inputStrings, input.View())
-	}
-
-	inputStrings = append(inputStrings, wrapWithCursor(l.cursor == len(l.inputs), focusedButton, m.styles.toEnter))
-
-	joined := lipgloss.JoinVertical(lipgloss.Left, append([]string{register}, inputStrings...)...)
+	joined := lipgloss.JoinVertical(lipgloss.Left, []string{login, l.form.View()}...)
 	s := lipgloss.NewStyle().Align(lipgloss.Left).Render(joined)
 	centeredText := lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, s)
 
@@ -194,43 +185,6 @@ func (p PreAuthentication) renderPreAuthentication(m model) string {
 	return centeredText
 }
 
-func (state *Login) updateLogin(msg tea.Msg) (State, []tea.Cmd) {
-	cmds := make([]tea.Cmd, len(state.inputs))
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "tab", "shift+tab", "enter", "up", "down":
-			s := msg.String()
-
-			if s == "enter" && state.cursor == len(state.inputs) {
-				return initMainMenu(), []tea.Cmd{}
-			} else {
-				if s == "up" || s == "shift+tab" {
-					state.cursor--
-				} else {
-					state.cursor++
-				}
-
-				if state.cursor > len(state.inputs)+1 {
-					state.cursor = 0
-				} else if state.cursor < 0 {
-					state.cursor = len(state.inputs)
-				}
-
-				for i := 0; i <= len(state.inputs)-1; i++ {
-					state.inputs[i].Blur()
-					if i == state.cursor {
-						cmds[i] = state.inputs[i].Focus()
-						continue
-					}
-				}
-			}
-		}
-	}
-
-	return *state, cmds
-}
-
 func (state *PreAuthentication) updatePreAuthentication(msg tea.Msg) State {
 
 	newCursor := state.cursor
@@ -257,14 +211,4 @@ func (state *PreAuthentication) updatePreAuthentication(msg tea.Msg) State {
 	}
 	state.cursor = newCursor
 	return *state
-}
-
-func (state *Login) updateInputs(msg tea.Msg) []tea.Cmd {
-	cmds := make([]tea.Cmd, len(state.inputs))
-
-	for i := range state.inputs {
-		state.inputs[i], cmds[i] = state.inputs[i].Update(msg)
-	}
-
-	return cmds
 }

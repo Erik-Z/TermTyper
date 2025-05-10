@@ -16,6 +16,18 @@ type User struct {
 	Salt     string
 }
 
+type ApplicationUser struct {
+	id       int64
+	username string
+}
+
+var (
+	CurrentUser = ApplicationUser{
+		id:       -1,
+		username: "Guest",
+	}
+)
+
 func initUserDB() (*sql.DB, error) {
 	db, err := sql.Open("sqlite", "./data/users.db")
 	if err != nil {
@@ -25,7 +37,8 @@ func initUserDB() (*sql.DB, error) {
 	// Create users table if it doesn't exist
 	if _, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS users (
-			email TEXT PRIMARY KEY,
+			id INTEGER PRIMARY KEY AUTOINCREMENT,
+			email TEXT NOT NULL,
 			password TEXT NOT NULL,
 			salt TEXT NOT NULL
 		);
@@ -38,7 +51,8 @@ func initUserDB() (*sql.DB, error) {
 }
 
 func CheckEmailExists(db *sql.DB, email string) bool {
-	err := db.QueryRow("SELECT email FROM users WHERE email = ?", email).Scan()
+	var emailFromDb string
+	err := db.QueryRow("SELECT email FROM users WHERE email = ?", email).Scan(&emailFromDb)
 	switch {
 	case err == sql.ErrNoRows:
 		return false
@@ -60,7 +74,19 @@ func CreateUser(db *sql.DB, email, password string) error {
 	}
 
 	// Insert the user into the database
-	_, err = db.Exec("INSERT INTO users (email, password, salt) VALUES (?, ?, ?)", email, hashedPassword, salt)
+	result, err := db.Exec("INSERT INTO users (email, password, salt) VALUES (?, ?, ?)", email, hashedPassword, salt)
+
+	if err != nil {
+		return err
+	}
+
+	CurrentUser.id, err = result.LastInsertId()
+	CurrentUser.username = email
+
+	if err != nil {
+		return err
+	}
+
 	return err
 }
 
@@ -87,7 +113,7 @@ func checkPasswordHash(password, hash, salt string) bool {
 	return err == nil
 }
 
-func authenticateUser(db *sql.DB, email, password string) (bool, error) {
+func AuthenticateUser(db *sql.DB, email, password string) (bool, error) {
 	var hashedPassword, salt string
 	err := db.QueryRow("SELECT password, salt FROM users WHERE email = ?", email).Scan(&hashedPassword, &salt)
 	if err != nil {
@@ -95,5 +121,18 @@ func authenticateUser(db *sql.DB, email, password string) (bool, error) {
 	}
 
 	// Check if the password matches the hashed password
-	return checkPasswordHash(password, hashedPassword, salt), nil
+	isAuthenticated := checkPasswordHash(password, hashedPassword, salt)
+	if isAuthenticated {
+		var id int64
+		err := db.QueryRow("SELECT id FROM users WHERE email = ?", email).Scan(&id)
+
+		if err != nil {
+			return false, err
+		}
+
+		CurrentUser.id = id
+		CurrentUser.username = email
+	}
+
+	return isAuthenticated, nil
 }

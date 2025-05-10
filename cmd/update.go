@@ -284,7 +284,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if state.form.State == huh.StateCompleted {
 			err := database.CreateUser(m.context.UserRepository, state.formData.email, state.formData.password)
 			if err == nil {
-				m.state = initMainMenu()
+				m.state = initMainMenu(database.CurrentUser)
 			}
 		}
 
@@ -300,6 +300,19 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			state.form = f
 			m.state = state
 			commands = append(commands, formCmd)
+		}
+
+		if state.form.State == huh.StateCompleted {
+			isAuthenticated, err := database.AuthenticateUser(m.context.UserRepository, state.formData.email, state.formData.password)
+			if err == nil && isAuthenticated {
+				m.state = initMainMenu(database.CurrentUser)
+			} else {
+				newState := initLoginScreen()
+				newState.formData.email = state.formData.email
+
+				commands = append(commands, tea.Println("❌ Invalid credentials"))
+				m.state = newState
+			}
 		}
 
 	case PreAuthentication:
@@ -367,7 +380,7 @@ func (wordCountTestResults WordCountTestResults) handleInput(msg tea.Msg) State 
 			if wordCountTestResults.results.resultsSelection[newCursor] == "Next Test" {
 				return initWordCountTest(wordCountTestResults.results.mainMenu)
 			} else if wordCountTestResults.results.resultsSelection[newCursor] == "Main Menu" {
-				return initMainMenu()
+				return initMainMenu(database.CurrentUser)
 			} else if wordCountTestResults.results.resultsSelection[newCursor] == "Replay" {
 				return wordCountTestResults.showReplay()
 			}

@@ -17,7 +17,7 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
-func initMainMenu() MainMenu {
+func initMainMenu(user database.ApplicationUser) MainMenu {
 	return MainMenu{
 		MainMenuSelection: []string{
 			"Timer",
@@ -25,6 +25,7 @@ func initMainMenu() MainMenu {
 			"Zen",
 			"Config",
 		},
+		currentUser:            user,
 		cursor:                 0,
 		timerTestWordGenerator: words.NewGenerator(),
 		wordTestWordGenerator:  words.NewGenerator(),

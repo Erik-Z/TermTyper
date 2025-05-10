@@ -24,6 +24,7 @@ type MainMenu struct {
 	cursor                 int
 	timerTestWordGenerator words.WordGenerator
 	wordTestWordGenerator  words.WordGenerator
+	currentUser            database.ApplicationUser
 }
 
 type TestBase struct {

@@ -37,6 +37,8 @@ type Register struct {
 	isFormInitialized bool
 }
 
+type GuestLogin struct{}
+
 type LoginFormData struct {
 	email    string
 	password string
@@ -133,6 +135,7 @@ func initPreAuthentication(context database.Context) PreAuthentication {
 		authMenu: []State{
 			initRegisterScreen(context),
 			initLoginScreen(),
+			GuestLogin{},
 		},
 		cursor: 0,
 	}
@@ -192,6 +195,9 @@ func (state *PreAuthentication) updatePreAuthentication(msg tea.Msg) State {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
+			if _, ok := state.authMenu[newCursor].(GuestLogin); ok {
+				return initMainMenu(database.CurrentUser)
+			}
 			return state.authMenu[newCursor]
 
 		case "up", "k":

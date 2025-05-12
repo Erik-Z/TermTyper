@@ -1,0 +1,15 @@
+PRAGMA foreign_keys = ON;
+
+CREATE TABLE users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE NOT NULL,
+    password TEXT NOT NULL,
+    salt TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE user_config (
+    user_id INTEGER PRIMARY KEY,
+    config TEXT NOT NULL DEFAULT '{}',
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+);

@@ -5,7 +5,11 @@ import (
 	"database/sql"
 	"encoding/base64"
 	"log"
+	"time"
 
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"golang.org/x/crypto/bcrypt"
 	_ "modernc.org/sqlite"
 )
@@ -28,22 +32,54 @@ var (
 	}
 )
 
+func runMigrations(db *sql.DB) error {
+	driver, err := sqlite.WithInstance(db, &sqlite.Config{})
+	if err != nil {
+		return err
+	}
+
+	m, err := migrate.NewWithDatabaseInstance(
+		"../database_migrations",
+		"sqlite", driver,
+	)
+	if err != nil {
+		return err
+	}
+
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		return err
+	}
+
+	return nil
+}
+
 func initUserDB() (*sql.DB, error) {
-	db, err := sql.Open("sqlite", "./data/users.db")
+	db, err := sql.Open("sqlite", "./data/users.db?_foreign_keys=on")
 	if err != nil {
 		return nil, err
 	}
 
-	// Create users table if it doesn't exist
-	if _, err := db.Exec(`
-		CREATE TABLE IF NOT EXISTS users (
-			id INTEGER PRIMARY KEY AUTOINCREMENT,
-			email TEXT NOT NULL,
-			password TEXT NOT NULL,
-			salt TEXT NOT NULL
-		);
-	`); err != nil {
-		db.Close() // Clean up connection if table creation fails
+	driver, err := sqlite.WithInstance(db, &sqlite.Config{
+		MigrationsTable: "schema_migrations", // Custom table name (optional)
+	})
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+
+	m, err := migrate.NewWithDatabaseInstance(
+		"file://database_migrations", // Path to migration files
+		"sqlite",
+		driver,
+	)
+	if err != nil {
+		db.Close()
+		return nil, err
+	}
+
+	if err := m.Up(); err != nil && err != migrate.ErrNoChange {
+		db.Close()
 		return nil, err
 	}
 
@@ -63,6 +99,12 @@ func CheckEmailExists(db *sql.DB, email string) bool {
 }
 
 func CreateUser(db *sql.DB, email, password string) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
 	salt, err := generateSalt()
 	if err != nil {
 		return err
@@ -74,7 +116,7 @@ func CreateUser(db *sql.DB, email, password string) error {
 	}
 
 	// Insert the user into the database
-	result, err := db.Exec("INSERT INTO users (email, password, salt) VALUES (?, ?, ?)", email, hashedPassword, salt)
+	result, err := db.Exec("INSERT INTO users (email, password, salt, created_at) VALUES (?, ?, ?, ?)", email, hashedPassword, salt, time.Now())
 
 	if err != nil {
 		return err
@@ -82,12 +124,21 @@ func CreateUser(db *sql.DB, email, password string) error {
 
 	CurrentUser.id, err = result.LastInsertId()
 	CurrentUser.username = email
-
 	if err != nil {
 		return err
 	}
 
-	return err
+	defaultConfig := map[string]interface{}{
+		"time":  30,
+		"words": 30,
+	}
+
+	err = UpdateUserConfig(db, CurrentUser.id, defaultConfig)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func generateSalt() (string, error) {

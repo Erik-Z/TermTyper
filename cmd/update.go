@@ -10,6 +10,8 @@ import (
 )
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	m.session.mu.Lock()
+	defer m.session.mu.Unlock()
 	var commands []tea.Cmd
 	switch msg := msg.(type) {
 	case forceRenderMsg:
@@ -282,10 +284,35 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if state.form.State == huh.StateCompleted {
-			err := database.CreateUser(m.context.UserRepository, state.formData.email, state.formData.password)
-			if err == nil {
-				m.state = initMainMenu(database.CurrentUser)
+			if state.formData.password != state.formData.confirmPassword {
+				newState := initRegisterScreen(
+					state.context,
+					"❌ Passwords must match",
+					state.formData.email,
+					state.formData.password,
+					state.formData.confirmPassword,
+				)
+
+				m.state = newState
+				return m, tea.Batch(commands...)
 			}
+
+			newUser, err := database.CreateUser(m.context.UserRepository, state.formData.email, state.formData.password)
+			if err != nil {
+				newState := initRegisterScreen(
+					state.context,
+					"❌ "+err.Error(),
+					state.formData.email,
+					state.formData.password,
+					state.formData.confirmPassword,
+				)
+
+				m.state = newState
+				return m, tea.Batch(commands...)
+			}
+			m.session.User = newUser
+			m.session.Authenticated = true
+			m.state = initMainMenu(newUser)
 		}
 
 	case Login:
@@ -303,14 +330,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		if state.form.State == huh.StateCompleted {
-			isAuthenticated, err := database.AuthenticateUser(m.context.UserRepository, state.formData.email, state.formData.password)
-			if err == nil && isAuthenticated {
-				m.state = initMainMenu(database.CurrentUser)
+			authUser, err := database.AuthenticateUser(m.context.UserRepository, state.formData.email, state.formData.password)
+			if err == nil && authUser != nil {
+				m.session.User = authUser
+				m.session.Authenticated = true
+				m.state = initMainMenu(authUser)
 			} else {
-				newState := initLoginScreen()
+				newState := initLoginScreen("❌ Invalid credentials")
 				newState.formData.email = state.formData.email
 
-				commands = append(commands, tea.Println("❌ Invalid credentials"))
 				m.state = newState
 			}
 		}
@@ -380,7 +408,7 @@ func (wordCountTestResults WordCountTestResults) handleInput(msg tea.Msg) State 
 			if wordCountTestResults.results.resultsSelection[newCursor] == "Next Test" {
 				return initWordCountTest(wordCountTestResults.results.mainMenu)
 			} else if wordCountTestResults.results.resultsSelection[newCursor] == "Main Menu" {
-				return initMainMenu(database.CurrentUser)
+				return initMainMenu(wordCountTestResults.results.mainMenu.currentUser)
 			} else if wordCountTestResults.results.resultsSelection[newCursor] == "Replay" {
 				return wordCountTestResults.showReplay()
 			}

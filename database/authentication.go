@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"database/sql"
 	"encoding/base64"
+	"fmt"
 	"log"
 	"time"
 
@@ -21,47 +22,20 @@ type User struct {
 }
 
 type ApplicationUser struct {
-	id       int64
-	username string
-}
-
-var (
-	CurrentUser = ApplicationUser{
-		id:       -1,
-		username: "Guest",
-	}
-)
-
-func runMigrations(db *sql.DB) error {
-	driver, err := sqlite.WithInstance(db, &sqlite.Config{})
-	if err != nil {
-		return err
-	}
-
-	m, err := migrate.NewWithDatabaseInstance(
-		"../database_migrations",
-		"sqlite", driver,
-	)
-	if err != nil {
-		return err
-	}
-
-	err = m.Up()
-	if err != nil && err != migrate.ErrNoChange {
-		return err
-	}
-
-	return nil
+	Id       int64
+	Username string
+	Config   *UserConfig
 }
 
 func initUserDB() (*sql.DB, error) {
 	db, err := sql.Open("sqlite", "./data/users.db?_foreign_keys=on")
+	db.SetMaxOpenConns(1)
 	if err != nil {
 		return nil, err
 	}
 
 	driver, err := sqlite.WithInstance(db, &sqlite.Config{
-		MigrationsTable: "schema_migrations", // Custom table name (optional)
+		MigrationsTable: "schema_migrations",
 	})
 	if err != nil {
 		db.Close()
@@ -98,47 +72,55 @@ func CheckEmailExists(db *sql.DB, email string) bool {
 	return true
 }
 
-func CreateUser(db *sql.DB, email, password string) error {
+func CreateUser(db *sql.DB, email, password string) (*ApplicationUser, error) {
 	tx, err := db.Begin()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer tx.Rollback()
 
 	salt, err := generateSalt()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	hashedPassword, err := hashPassword(password, salt)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// Insert the user into the database
-	result, err := db.Exec("INSERT INTO users (email, password, salt, created_at) VALUES (?, ?, ?, ?)", email, hashedPassword, salt, time.Now())
+	result, err := tx.Exec("INSERT INTO users (email, password, salt, created_at) VALUES (?, ?, ?, ?)", email, hashedPassword, salt, time.Now())
 
 	if err != nil {
-		return err
-	}
-
-	CurrentUser.id, err = result.LastInsertId()
-	CurrentUser.username = email
-	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defaultConfig := map[string]interface{}{
 		"time":  30,
 		"words": 30,
 	}
-
-	err = UpdateUserConfig(db, CurrentUser.id, defaultConfig)
+	newUserId, err := result.LastInsertId()
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return tx.Commit()
+	newUser := &ApplicationUser{
+		Id:       newUserId,
+		Username: email,
+	}
+
+	userConfig, err := UpdateUserConfig(tx, newUser.Id, defaultConfig)
+	if err != nil {
+		return nil, err
+	}
+	newUser.Config = userConfig
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return newUser, nil
 }
 
 func generateSalt() (string, error) {
@@ -164,26 +146,28 @@ func checkPasswordHash(password, hash, salt string) bool {
 	return err == nil
 }
 
-func AuthenticateUser(db *sql.DB, email, password string) (bool, error) {
-	var hashedPassword, salt string
-	err := db.QueryRow("SELECT password, salt FROM users WHERE email = ?", email).Scan(&hashedPassword, &salt)
+func AuthenticateUser(db *sql.DB, email, password string) (*ApplicationUser, error) {
+	var (
+		hashedPassword string
+		salt           string
+		userID         int64
+	)
+
+	err := db.QueryRow(
+		"SELECT id, email, password, salt FROM users WHERE email = ?",
+		email,
+	).Scan(&userID, &email, &hashedPassword, &salt)
+
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
-	// Check if the password matches the hashed password
-	isAuthenticated := checkPasswordHash(password, hashedPassword, salt)
-	if isAuthenticated {
-		var id int64
-		err := db.QueryRow("SELECT id FROM users WHERE email = ?", email).Scan(&id)
-
-		if err != nil {
-			return false, err
-		}
-
-		CurrentUser.id = id
-		CurrentUser.username = email
+	if !checkPasswordHash(password, hashedPassword, salt) {
+		return nil, fmt.Errorf("invalid credentials")
 	}
 
-	return isAuthenticated, nil
+	return &ApplicationUser{
+		Id:       userID,
+		Username: email,
+	}, nil
 }

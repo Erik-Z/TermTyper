@@ -24,6 +24,8 @@ var resultsStyle = lipgloss.NewStyle().
 	PaddingRight(5)
 
 func (m model) View() string {
+	m.session.mu.Lock()
+	defer m.session.mu.Unlock()
 	var s string
 
 	termWidth, termHeight := m.width-2, m.height-2
@@ -32,7 +34,7 @@ func (m model) View() string {
 
 	switch state := m.state.(type) {
 	case MainMenu:
-		termtyper := style("TermTyper", m.styles.magenta)
+		termtyper := style("TermTyper - Welcome "+m.session.User.Username, m.styles.magenta)
 		termtyper = lipgloss.NewStyle().PaddingBottom(1).Render(termtyper)
 		var menuItems []string
 		menuItemsStyle := lipgloss.NewStyle().PaddingTop(1)

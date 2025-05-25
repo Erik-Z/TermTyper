@@ -29,12 +29,15 @@ type Login struct {
 	form              *huh.Form
 	formData          *LoginFormData
 	isFormInitialized bool
+	errorMessage      string
 }
 
 type Register struct {
+	context           *database.Context
 	form              *huh.Form
 	formData          *RegisterFormData
 	isFormInitialized bool
+	errorMessage      string
 }
 
 type GuestLogin struct{}
@@ -64,7 +67,7 @@ type ResetPassword struct {
 	cursor int
 }
 
-func initLoginScreen() Login {
+func initLoginScreen(errorMessage string) Login {
 	data := &LoginFormData{}
 	form := huh.NewForm(
 		huh.NewGroup(
@@ -81,11 +84,22 @@ func initLoginScreen() Login {
 		form:              form,
 		formData:          data,
 		isFormInitialized: false,
+		errorMessage:      errorMessage,
 	}
 }
 
-func initRegisterScreen(context database.Context) Register {
-	data := &RegisterFormData{}
+func initRegisterScreen(
+	context *database.Context,
+	errorMessage string,
+	email string,
+	password string,
+	confirmPassword string,
+) Register {
+	data := &RegisterFormData{
+		email:           email,
+		password:        password,
+		confirmPassword: confirmPassword,
+	}
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
@@ -113,28 +127,24 @@ func initRegisterScreen(context database.Context) Register {
 			huh.NewInput().
 				Title("Confirm password").
 				Value(&data.confirmPassword).
-				EchoMode(huh.EchoModePassword).
-				Validate(func(str string) error {
-					if str != data.password {
-						return fmt.Errorf("password must match")
-					}
-					return nil
-				}),
+				EchoMode(huh.EchoModePassword),
 		),
 	)
 
 	return Register{
+		context:           context,
 		form:              form,
 		formData:          data,
 		isFormInitialized: false,
+		errorMessage:      errorMessage,
 	}
 }
 
-func initPreAuthentication(context database.Context) PreAuthentication {
+func initPreAuthentication(context *database.Context) PreAuthentication {
 	return PreAuthentication{
 		authMenu: []State{
-			initRegisterScreen(context),
-			initLoginScreen(),
+			initRegisterScreen(context, "", "", "", ""),
+			initLoginScreen(""),
 			GuestLogin{},
 		},
 		cursor: 0,
@@ -143,7 +153,7 @@ func initPreAuthentication(context database.Context) PreAuthentication {
 
 func (l Login) renderLoginScreen(m model) string {
 	termWidth, termHeight := m.width-2, m.height-2
-	login := style("Login", m.styles.magenta)
+	login := style("Login"+" "+l.errorMessage, m.styles.magenta)
 	login = lipgloss.NewStyle().PaddingBottom(1).Render(login)
 
 	joined := lipgloss.JoinVertical(lipgloss.Left, []string{login, l.form.View()}...)
@@ -155,7 +165,7 @@ func (l Login) renderLoginScreen(m model) string {
 
 func (r Register) renderRegisterScreen(m model) string {
 	termWidth, termHeight := m.width-2, m.height-2
-	register := style("Register", m.styles.magenta)
+	register := style("Register"+" "+r.errorMessage, m.styles.magenta)
 	register = lipgloss.NewStyle().PaddingBottom(1).Render(register)
 
 	joined := lipgloss.JoinVertical(lipgloss.Center, []string{register, r.form.View()}...)
@@ -196,7 +206,15 @@ func (state *PreAuthentication) updatePreAuthentication(msg tea.Msg) State {
 		switch msg.String() {
 		case "enter":
 			if _, ok := state.authMenu[newCursor].(GuestLogin); ok {
-				return initMainMenu(database.CurrentUser)
+				guestUser := database.ApplicationUser{
+					Id:       -1,
+					Username: "Guest",
+					Config: &database.UserConfig{
+						Time:  30,
+						Words: 30,
+					},
+				}
+				return initMainMenu(&guestUser)
 			}
 			return state.authMenu[newCursor]
 

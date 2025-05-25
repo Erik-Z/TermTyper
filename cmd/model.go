@@ -15,6 +15,7 @@ type model struct {
 	styles        Styles
 	width, height int
 	context       database.Context
+	session       *Session
 }
 
 type State interface{}
@@ -24,7 +25,7 @@ type MainMenu struct {
 	cursor                 int
 	timerTestWordGenerator words.WordGenerator
 	wordTestWordGenerator  words.WordGenerator
-	currentUser            database.ApplicationUser
+	currentUser            *database.ApplicationUser
 }
 
 type TestBase struct {

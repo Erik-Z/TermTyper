@@ -17,7 +17,7 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
-func initMainMenu(user database.ApplicationUser) MainMenu {
+func initMainMenu(user *database.ApplicationUser) MainMenu {
 	return MainMenu{
 		MainMenuSelection: []string{
 			"Timer",
@@ -97,13 +97,14 @@ func initZenMode(menu MainMenu) ZenMode {
 	}
 }
 
-func initModel(termProfile termenv.Profile, foregroundColor termenv.Color, width, height int) model {
+func initModel(termProfile termenv.Profile, foregroundColor termenv.Color, width, height int, sess *Session) model {
 	databaseContext := database.InitDB()
 	return model{
-		state:   initPreAuthentication(databaseContext),
+		state:   initPreAuthentication(&databaseContext),
 		width:   width,
 		height:  height,
 		context: databaseContext,
+		session: sess,
 		styles: Styles{
 			correct: func(str string) termenv.Style {
 				return termenv.String(str).Foreground(foregroundColor)

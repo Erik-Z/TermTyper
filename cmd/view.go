@@ -188,14 +188,16 @@ func (m model) View() string {
 		}
 
 	case Register:
-		//s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style(state.form.View(), m.styles.toEnter))
 		s = state.renderRegisterScreen(m)
 
 	case PreAuthentication:
 		s = state.renderPreAuthentication(m)
 
 	case Login:
-		s = state.renderLoginScreen(m)
+		s = state.renderLoginScreen(&m)
+
+	case Settings:
+		s = state.renderSettings(&m)
 	}
 
 	return s

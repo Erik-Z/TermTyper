@@ -23,7 +23,7 @@ type UserConfig struct {
 }
 
 func GetUserConfig(db *sql.DB, userID int64) (UserConfig, error) {
-	const query = `SELECT config FROM user_configs WHERE user_id = ?`
+	const query = `SELECT config FROM user_config WHERE user_id = ?`
 
 	var configJSON string
 	err := db.QueryRow(query, userID).Scan(&configJSON)

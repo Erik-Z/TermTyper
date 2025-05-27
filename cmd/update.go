@@ -33,7 +33,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch state := m.state.(type) {
 	case MainMenu:
-		m.state = state.handleInput(msg)
+		m.state = state.handleInput(msg, &m)
 
 	case TimerTest:
 		switch msg := msg.(type) {
@@ -336,7 +336,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.session.Authenticated = true
 				m.state = initMainMenu(authUser)
 			} else {
-				newState := initLoginScreen("❌ Invalid credentials")
+				newState := initLoginScreen("❌" + err.Error())
 				newState.formData.email = state.formData.email
 
 				m.state = newState
@@ -351,6 +351,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if _, ok := m.state.(Login); ok {
 			commands = append(commands, forceRender())
 		}
+
+	case Settings:
+		m.state = state.updateSettings(msg)
 	}
 
 	return m, tea.Batch(commands...)
@@ -364,7 +367,7 @@ func forceRender() tea.Cmd {
 	}
 }
 
-func (menu MainMenu) handleInput(msg tea.Msg) State {
+func (menu MainMenu) handleInput(msg tea.Msg, m *model) State {
 	newCursor := menu.cursor
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -376,6 +379,8 @@ func (menu MainMenu) handleInput(msg tea.Msg) State {
 				return initZenMode(menu)
 			} else if menu.MainMenuSelection[newCursor] == "Word Count" {
 				return initWordCountTest(menu)
+			} else if menu.MainMenuSelection[newCursor] == "Config" {
+				return initSettings(m.session.User)
 			}
 
 		case "up", "k":

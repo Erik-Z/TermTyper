@@ -28,13 +28,10 @@ var (
 	privateKeyPath string
 )
 
-type sessionKey struct{}
-
 type Session struct {
-	mu         sync.Mutex
-	User       *database.ApplicationUser
-	RemoteAddr string
-	// Add other session-specific fields here
+	mu            sync.Mutex
+	User          *database.ApplicationUser
+	RemoteAddr    string
 	Authenticated bool
 	LastActivity  time.Time
 }
@@ -82,7 +79,6 @@ var (
 				wish.WithAddress(fmt.Sprintf("%s:%d", host, port)),
 				wish.WithHostKeyPath(privateKeyPath),
 				wish.WithMiddleware(
-					sessionMiddleware,
 					bubbletea.Middleware(teaHandler),
 					activeterm.Middleware(),
 					lm.Middleware(),
@@ -125,31 +121,16 @@ func init() {
 	RootCmd.AddCommand(serveCmd)
 }
 
-func sessionMiddleware(next ssh.Handler) ssh.Handler {
-	return func(s ssh.Session) {
-		sess := &Session{
-			RemoteAddr:   s.RemoteAddr().String(),
-			LastActivity: time.Now(),
-		}
-
-		s.Context().SetValue(sessionKey{}, sess)
-
-		defer func() {
-			sess.mu.Lock()
-			log.Printf("Session ended for %s@%s", sess.User, sess.RemoteAddr)
-			sess.mu.Unlock()
-		}()
-
-		next(s)
-	}
-}
-
 func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 	pty, _, _ := s.Pty()
-	sess, ok := s.Context().Value(sessionKey{}).(*Session)
-	if !ok {
-		log.Println("Session not found in context")
-		return nil, nil
+	sess := &Session{
+		RemoteAddr:   s.RemoteAddr().String(),
+		LastActivity: time.Now(),
+		User: &database.ApplicationUser{
+			Id:       -1,
+			Username: "Guest",
+			Config:   &database.DefaultConfig,
+		},
 	}
 
 	m := initModel(

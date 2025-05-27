@@ -151,7 +151,7 @@ func initPreAuthentication(context *database.Context) PreAuthentication {
 	}
 }
 
-func (l Login) renderLoginScreen(m model) string {
+func (l Login) renderLoginScreen(m *model) string {
 	termWidth, termHeight := m.width-2, m.height-2
 	login := style("Login"+" "+l.errorMessage, m.styles.magenta)
 	login = lipgloss.NewStyle().PaddingBottom(1).Render(login)

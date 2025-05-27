@@ -166,8 +166,14 @@ func AuthenticateUser(db *sql.DB, email, password string) (*ApplicationUser, err
 		return nil, fmt.Errorf("invalid credentials")
 	}
 
+	userConfig, err := GetUserConfig(db, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user config: %v", err)
+	}
+
 	return &ApplicationUser{
 		Id:       userID,
 		Username: email,
+		Config:   &userConfig,
 	}, nil
 }

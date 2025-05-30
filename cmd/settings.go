@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"termtyper/database"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -8,26 +9,57 @@ import (
 )
 
 type Settings struct {
-	wordCountSelection []int
-	wordCountCursor    int
-	timerSelection     []int
-	timerCursor        int
-	settingsSelection  []string
-	settingsCursor     int
+	settingsCursor    int
+	settingSelections []TestSetting
+}
+
+type TestSetting interface {
+	render(styles Styles) string
+}
+
+type TimerSettings struct {
+	timerCursor     int
+	timerSelection  []int
+	selectionCursor int
+}
+
+type WordsSettings struct {
+	wordsCursor     int
+	wordsSelection  []int
+	selectionCursor int
+}
+
+func (t TimerSettings) render(style Styles) string {
+	selections := []string{formatDuration(t.timerSelection[t.timerCursor])}
+	selectionsStr := showSelections(selections, t.selectionCursor, style)
+	return fmt.Sprintf("%s %s", "Timer", selectionsStr)
+}
+
+func (w WordsSettings) render(style Styles) string {
+	selections := []string{fmt.Sprintf("%d", w.wordsSelection[w.wordsCursor])}
+	selectionsStr := showSelections(selections, w.selectionCursor, style)
+	return fmt.Sprintf("%s %s", "Words", selectionsStr)
 }
 
 func initSettings(user *database.ApplicationUser) Settings {
-	wordCountSelections := []int{15, 30, 45, 60}
+	wordCountSelection := []int{15, 30, 45, 60}
 	timerSelection := []int{15, 30, 60, 120}
-	settingsSelection := []string{"Words", "Time"}
+
+	timerSettings := TimerSettings{
+		timerSelection:  timerSelection,
+		timerCursor:     findTimerIndex(user.Config, timerSelection),
+		selectionCursor: 0,
+	}
+
+	wordsSettings := WordsSettings{
+		wordsSelection:  wordCountSelection,
+		wordsCursor:     findWordsIndex(user.Config, wordCountSelection),
+		selectionCursor: 0,
+	}
 
 	return Settings{
-		wordCountSelection: wordCountSelections,
-		wordCountCursor:    findWordsIndex(user.Config, wordCountSelections),
-		timerSelection:     timerSelection,
-		timerCursor:        findTimerIndex(user.Config, timerSelection),
-		settingsSelection:  settingsSelection,
-		settingsCursor:     0,
+		settingsCursor:    0,
+		settingSelections: []TestSetting{timerSettings, wordsSettings},
 	}
 }
 
@@ -38,8 +70,8 @@ func (s Settings) renderSettings(m *model) string {
 
 	menuItemsStyle := lipgloss.NewStyle().PaddingTop(1)
 	var settingSelection []string
-	for i, choice := range s.settingsSelection {
-		choiceShow := style(choice, m.styles.toEnter)
+	for i, choice := range s.settingSelections {
+		choiceShow := choice.render(m.styles)
 
 		choiceShow = wrapWithCursor(s.settingsCursor == i, choiceShow, m.styles.toEnter)
 		choiceShow = menuItemsStyle.Render(choiceShow)
@@ -63,13 +95,13 @@ func (state *Settings) updateSettings(msg tea.Msg) State {
 
 		case "up", "k":
 			if state.settingsCursor == 0 {
-				newCursor = len(state.settingsSelection) - 1
+				newCursor = len(state.settingSelections) - 1
 			} else {
 				newCursor--
 			}
 
 		case "down", "j":
-			if state.settingsCursor == len(state.settingsSelection)-1 {
+			if state.settingsCursor == len(state.settingSelections)-1 {
 				newCursor = 0
 			} else {
 				newCursor++
@@ -96,4 +128,23 @@ func findTimerIndex(config *database.UserConfig, timerSelection []int) int {
 		}
 	}
 	return 0
+}
+
+func showSelections(selections []string, cursor int, styles Styles) string {
+	var selectionsStr string
+	for i, option := range selections {
+		if i+1 == cursor {
+			selectionsStr += "[" + style(option, styles.magenta) + "]"
+		} else {
+			selectionsStr += "[" + style(option, styles.toEnter) + "]"
+		}
+		selectionsStr += " "
+	}
+	return selectionsStr
+}
+
+func formatDuration(seconds int) string {
+	minutes := seconds / 60
+	remainingSeconds := seconds % 60
+	return fmt.Sprintf("%dm%ds", minutes, remainingSeconds)
 }

@@ -99,7 +99,7 @@ func initZenMode(menu MainMenu) ZenMode {
 
 func initModel(termProfile termenv.Profile, foregroundColor termenv.Color, width, height int, sess *Session) model {
 	databaseContext := database.InitDB()
-	return model{
+	m := model{
 		state:   initPreAuthentication(&databaseContext),
 		width:   width,
 		height:  height,
@@ -123,6 +123,13 @@ func initModel(termProfile termenv.Profile, foregroundColor termenv.Color, width
 			},
 		},
 	}
+
+	// Initialize state machine with pre-authentication state
+	m.stateMachine = NewStateMachine(&m)
+	m.stateMachine.SetCurrentState(StatePreAuth)
+	m.stateMachine.handlers[StatePreAuth] = NewPreAuthHandler(&databaseContext)
+
+	return m
 }
 
 func OsInit() {

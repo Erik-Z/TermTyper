@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"reflect"
 	"termtyper/database"
 
 	"net/mail"
@@ -69,6 +68,7 @@ type ResetPassword struct {
 
 func initLoginScreen(errorMessage string) Login {
 	data := &LoginFormData{}
+
 	form := huh.NewForm(
 		huh.NewGroup(
 			huh.NewInput().
@@ -163,7 +163,7 @@ func (l Login) renderLoginScreen(m *model) string {
 	return centeredText
 }
 
-func (r Register) renderRegisterScreen(m model) string {
+func (r Register) renderRegisterScreen(m *model) string {
 	termWidth, termHeight := m.width-2, m.height-2
 	register := style("Register"+" "+r.errorMessage, m.styles.magenta)
 	register = lipgloss.NewStyle().PaddingBottom(1).Render(register)
@@ -173,66 +173,4 @@ func (r Register) renderRegisterScreen(m model) string {
 	centeredText := lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, s)
 
 	return centeredText
-}
-
-func (p PreAuthentication) renderPreAuthentication(m model) string {
-	termWidth, termHeight := m.width-2, m.height-2
-	termtyper := style("TermTyper", m.styles.magenta)
-	termtyper = lipgloss.NewStyle().PaddingBottom(1).Render(termtyper)
-
-	var authMenu []string
-	menuItemsStyle := lipgloss.NewStyle().PaddingTop(1)
-
-	for i, choice := range p.authMenu {
-		choiceShow := style(reflect.TypeOf(choice).Name(), m.styles.toEnter)
-
-		choiceShow = wrapWithCursor(p.cursor == i, choiceShow, m.styles.toEnter)
-		choiceShow = menuItemsStyle.Render(choiceShow)
-		authMenu = append(authMenu, choiceShow)
-	}
-
-	joined := lipgloss.JoinVertical(lipgloss.Left, append([]string{termtyper}, authMenu...)...)
-	s := lipgloss.NewStyle().Align(lipgloss.Left).Render(joined)
-	centeredText := lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, s)
-
-	return centeredText
-}
-
-func (state *PreAuthentication) updatePreAuthentication(msg tea.Msg) State {
-
-	newCursor := state.cursor
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter":
-			if _, ok := state.authMenu[newCursor].(GuestLogin); ok {
-				guestUser := database.ApplicationUser{
-					Id:       -1,
-					Username: "Guest",
-					Config: &database.UserConfig{
-						Time:  30,
-						Words: 30,
-					},
-				}
-				return initMainMenu(&guestUser)
-			}
-			return state.authMenu[newCursor]
-
-		case "up", "k":
-			if state.cursor == 0 {
-				newCursor = len(state.authMenu) - 1
-			} else {
-				newCursor--
-			}
-
-		case "down", "j":
-			if state.cursor == len(state.authMenu)-1 {
-				newCursor = 0
-			} else {
-				newCursor++
-			}
-		}
-	}
-	state.cursor = newCursor
-	return *state
 }

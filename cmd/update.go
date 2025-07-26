@@ -270,50 +270,52 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case Register:
-		if !state.isFormInitialized {
-			initCmd := state.form.Init()
-			commands = append(commands, initCmd)
-			state.isFormInitialized = true
-		}
+		// if !state.isFormInitialized {
+		// 	initCmd := state.form.Init()
+		// 	commands = append(commands, initCmd)
+		// 	state.isFormInitialized = true
+		// }
 
-		updatedForm, formCmd := state.form.Update(msg)
-		if f, ok := updatedForm.(*huh.Form); ok {
-			state.form = f
-			m.state = state
-			commands = append(commands, formCmd)
-		}
+		// updatedForm, formCmd := state.form.Update(msg)
+		// if f, ok := updatedForm.(*huh.Form); ok {
+		// 	state.form = f
+		// 	m.state = state
+		// 	commands = append(commands, formCmd)
+		// }
 
-		if state.form.State == huh.StateCompleted {
-			if state.formData.password != state.formData.confirmPassword {
-				newState := initRegisterScreen(
-					state.context,
-					"❌ Passwords must match",
-					state.formData.email,
-					state.formData.password,
-					state.formData.confirmPassword,
-				)
+		// if state.form.State == huh.StateCompleted {
+		// 	if state.formData.password != state.formData.confirmPassword {
+		// 		newState := initRegisterScreen(
+		// 			state.context,
+		// 			"❌ Passwords must match",
+		// 			state.formData.email,
+		// 			state.formData.password,
+		// 			state.formData.confirmPassword,
+		// 		)
 
-				m.state = newState
-				return m, tea.Batch(commands...)
-			}
+		// 		m.state = newState
+		// 		return m, tea.Batch(commands...)
+		// 	}
 
-			newUser, err := database.CreateUser(m.context.UserRepository, state.formData.email, state.formData.password)
-			if err != nil {
-				newState := initRegisterScreen(
-					state.context,
-					"❌ "+err.Error(),
-					state.formData.email,
-					state.formData.password,
-					state.formData.confirmPassword,
-				)
+		// 	newUser, err := database.CreateUser(m.context.UserRepository, state.formData.email, state.formData.password)
+		// 	if err != nil {
+		// 		newState := initRegisterScreen(
+		// 			state.context,
+		// 			"❌ "+err.Error(),
+		// 			state.formData.email,
+		// 			state.formData.password,
+		// 			state.formData.confirmPassword,
+		// 		)
 
-				m.state = newState
-				return m, tea.Batch(commands...)
-			}
-			m.session.User = newUser
-			m.session.Authenticated = true
-			m.state = initMainMenu(newUser)
-		}
+		// 		m.state = newState
+		// 		return m, tea.Batch(commands...)
+		// 	}
+		// 	m.session.User = newUser
+		// 	m.session.Authenticated = true
+		// 	m.state = initMainMenu(newUser)
+		// }
+
+		return m.stateMachine.HandleInput(msg)
 
 	case Login:
 		if !state.isFormInitialized {
@@ -344,13 +346,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case PreAuthentication:
-		m.state = state.updatePreAuthentication(msg)
-		if _, ok := m.state.(Register); ok {
-			commands = append(commands, forceRender())
-		}
-		if _, ok := m.state.(Login); ok {
-			commands = append(commands, forceRender())
-		}
+		return m.stateMachine.HandleInput(msg)
 
 	case Settings:
 		m.state = state.updateSettings(msg)

@@ -12,6 +12,7 @@ import (
 
 type model struct {
 	state         State
+	stateMachine  *StateMachine
 	styles        Styles
 	width, height int
 	context       database.Context
@@ -85,11 +86,8 @@ type Replay struct {
 	isReplayInProcess bool
 }
 
-type TestResults interface {
-	ShowReplay()
-}
-
 type Results struct {
+	testType         string
 	wpm              int
 	accuracy         float64
 	deltaWpm         float64
@@ -109,6 +107,7 @@ type WordCountTestResults struct {
 	wordCount     int
 	results       Results
 }
+
 type StopWatch struct {
 	stopwatch stopwatch.Model
 	isRunning bool

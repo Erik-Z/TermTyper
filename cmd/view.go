@@ -5,7 +5,6 @@ import (
 	"math"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -26,181 +25,12 @@ var resultsStyle = lipgloss.NewStyle().
 func (m model) View() string {
 	m.session.mu.Lock()
 	defer m.session.mu.Unlock()
-	var s string
 
-	termWidth, termHeight := m.width-2, m.height-2
+	termWidth := m.width - 2
 	reactiveLimit := (termWidth * 6) / 10
 	lineLenLimit = int(math.Min(float64(maxLineLen), math.Max(float64(minLineLen), float64(reactiveLimit))))
 
-	switch state := m.state.(type) {
-	case MainMenu:
-		termtyper := style("TermTyper - Welcome "+m.session.User.Username, m.styles.magenta)
-		termtyper = lipgloss.NewStyle().PaddingBottom(1).Render(termtyper)
-		var menuItems []string
-		menuItemsStyle := lipgloss.NewStyle().PaddingTop(1)
-
-		for i, choice := range state.MainMenuSelection {
-			choiceShow := style(choice, m.styles.toEnter)
-
-			choiceShow = wrapWithCursor(state.cursor == i, choiceShow, m.styles.toEnter)
-			choiceShow = menuItemsStyle.Render(choiceShow)
-			menuItems = append(menuItems, choiceShow)
-		}
-
-		joined := lipgloss.JoinVertical(lipgloss.Left, append([]string{termtyper}, menuItems...)...)
-		s := lipgloss.NewStyle().Align(lipgloss.Left).Render(joined)
-		centeredText := lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, s)
-
-		borderStyle := lipgloss.NewStyle().
-			Border(lipgloss.DoubleBorder()).
-			BorderForeground(lipgloss.Color("#FF00FF"))
-
-		return borderStyle.Render(centeredText)
-
-	case TimerTest:
-		var timer string
-
-		timer = style(state.timer.timer.View(), m.styles.magenta)
-
-		paragraph := state.base.renderParagraph(lineLenLimit, m.styles)
-		lines := strings.Split(paragraph, "\n")
-		cursorLine := findCursorLine(lines, state.base.cursor)
-
-		linesAroundCursor := strings.Join(getLinesAroundCursor(lines, cursorLine), "\n")
-
-		s += positionVertically(termHeight)
-		avgLineLen := averageLineLen(lines)
-		indentBy := uint(math.Max(0, float64(termWidth/2-avgLineLen/2)))
-
-		s += m.indent(timer, indentBy) + "\n\n" + m.indent(linesAroundCursor, indentBy)
-
-		if !state.timer.isRunning {
-			s += "\n\n\n"
-			s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter))
-		}
-
-		return s + "\n" + string(state.base.inputBuffer)
-
-	case ZenMode:
-		stopwatch := style(state.stopwatch.stopwatch.View(), m.styles.magenta)
-		paragraphView := state.base.renderParagraphZenMode(lineLenLimit, m.styles)
-		lines := strings.Split(paragraphView, "\n")
-		cursorLine := findCursorLine(strings.Split(paragraphView, "\n"), state.base.cursor)
-
-		linesAroundCursor := strings.Join(getLinesAroundCursor(lines, cursorLine), "\n")
-
-		s += positionVertically(termHeight)
-		//avgLineLen := averageLineLen(lines)
-		//indentBy := uint(math.Max(0, float64(termWidth/2-avgLineLen/2)))
-
-		//s += m.indent(stopwatch, indentBy) + "\n\n" + m.indent(linesAroundCursor, indentBy)
-		s += stopwatch + "\n\n" + linesAroundCursor
-		if !state.stopwatch.isRunning {
-			s += "\n\n\n"
-			s += style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter)
-			//s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter))
-		}
-		centeredText := lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center+lipgloss.Position(termHeight/2), s)
-		borderStyle := lipgloss.NewStyle().
-			Border(lipgloss.DoubleBorder()).
-			BorderForeground(lipgloss.Color("#FF00FF"))
-
-		return borderStyle.Render(centeredText)
-
-	case WordCountTest:
-		stopwatchViewSeconds := strconv.FormatFloat(state.stopwatch.stopwatch.Elapsed().Seconds(), 'f', 0, 64) + "s"
-		stopwatch := style(stopwatchViewSeconds, m.styles.magenta)
-		paragraphView := state.base.renderParagraph(lineLenLimit, m.styles)
-		lines := strings.Split(paragraphView, "\n")
-		cursorLine := findCursorLine(strings.Split(paragraphView, "\n"), state.base.cursor)
-
-		linesAroundCursor := strings.Join(getLinesAroundCursor(lines, cursorLine), "\n")
-
-		s += positionVertically(termHeight)
-		avgLineLen := averageLineLen(lines)
-		indentBy := uint(math.Max(0, float64(termWidth/2-avgLineLen/2)))
-
-		s += m.indent(stopwatch, indentBy) + "\n\n" + m.indent(linesAroundCursor, indentBy)
-		s += "\n\n\n"
-		s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter))
-
-	case WordCountTestResults:
-		rawWpmShow := "raw: " + style(strconv.Itoa(state.results.rawWpm), m.styles.magenta)
-		wpm := "wpm: " + style(strconv.Itoa(state.results.wpm), m.styles.magenta)
-		givenTime := "time: " + style(state.results.time.String(), m.styles.magenta)
-		wordCount := "count: " + style(strconv.Itoa(state.wordCount), m.styles.magenta)
-		accuracy := "accuracy: " + style(fmt.Sprintf("%.1f", state.results.accuracy), m.styles.magenta)
-
-		statsLine1 := fmt.Sprintf("%s %s %s", accuracy, rawWpmShow, givenTime)
-		statsLine2 := wordCount
-
-		var menuItems []string
-		menuItemsStyle := lipgloss.NewStyle().Padding(0, 2, 0, 2)
-		for i, choice := range state.results.resultsSelection {
-			choiceShow := style(choice, m.styles.toEnter)
-
-			choiceShow = wrapWithCursor(state.results.cursor == i, choiceShow, m.styles.correct)
-			choiceShow = menuItemsStyle.Render(choiceShow)
-			menuItems = append(menuItems, choiceShow)
-		}
-
-		resultsMenu := lipgloss.JoinHorizontal(lipgloss.Center, menuItems...)
-
-		fullParagraph := lipgloss.JoinVertical(
-			lipgloss.Center, resultsStyle.Padding(1).Render(wpm),
-			resultsStyle.Padding(0).Render(statsLine1),
-			resultsStyle.Render(statsLine2), resultsStyle.Render(resultsMenu),
-		)
-		s = lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, fullParagraph)
-
-	case TimerTestResult:
-		rawWpmShow := "raw: " + style(strconv.Itoa(state.results.rawWpm), m.styles.magenta)
-		wpm := "wpm: " + style(strconv.Itoa(state.results.wpm), m.styles.magenta)
-		givenTime := "time: " + style(state.results.time.String(), m.styles.magenta)
-		accuracy := "accuracy: " + style(fmt.Sprintf("%.1f", state.results.accuracy), m.styles.magenta)
-
-		statsLine1 := fmt.Sprintf("%s %s %s", accuracy, rawWpmShow, givenTime)
-
-		fullParagraph := lipgloss.JoinVertical(lipgloss.Center, resultsStyle.Padding(1).Render(wpm), resultsStyle.Padding(0).Render(statsLine1))
-		s = lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, fullParagraph)
-
-	case Replay:
-		stopwatchViewSeconds := strconv.FormatFloat(state.stopwatch.stopwatch.Elapsed().Seconds(), 'f', 0, 64) + "s"
-		stopwatch := style(stopwatchViewSeconds, m.styles.magenta)
-		paragraphView := state.test.renderParagraph(lineLenLimit, m.styles)
-		lines := strings.Split(paragraphView, "\n")
-		cursorLine := findCursorLine(strings.Split(paragraphView, "\n"), state.test.cursor)
-
-		linesAroundCursor := strings.Join(getLinesAroundCursor(lines, cursorLine), "\n")
-
-		s += positionVertically(termHeight)
-		avgLineLen := averageLineLen(lines)
-		indentBy := uint(math.Max(0, float64(termWidth/2-avgLineLen/2)))
-
-		s += m.indent(stopwatch, indentBy) + "\n\n" + m.indent(linesAroundCursor, indentBy)
-		s += "\n\n\n"
-
-		if state.isReplayInProcess {
-			s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("Replay in progress..", m.styles.toEnter))
-
-		} else {
-			s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("Press any key to start Replay", m.styles.toEnter))
-		}
-
-	case Register:
-		s = state.renderRegisterScreen(m)
-
-	case PreAuthentication:
-		s = state.renderPreAuthentication(m)
-
-	case Login:
-		s = state.renderLoginScreen(&m)
-
-	case Settings:
-		s = state.renderSettings(&m)
-	}
-
-	return s
+	return m.stateMachine.Render()
 }
 
 func (base *TestBase) renderParagraph(lineLimit int, styles Styles) string {

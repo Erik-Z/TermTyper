@@ -30,7 +30,7 @@ type WordsSettings struct {
 }
 
 func (t TimerSettings) render(style Styles) string {
-	selections := []string{formatDuration(t.timerSelection[t.timerCursor])}
+	selections := []string{formatSettingsDuration(t.timerSelection[t.timerCursor])}
 	selectionsStr := showSelections(selections, t.selectionCursor, style)
 	return fmt.Sprintf("%s %s", "Timer", selectionsStr)
 }
@@ -143,7 +143,7 @@ func showSelections(selections []string, cursor int, styles Styles) string {
 	return selectionsStr
 }
 
-func formatDuration(seconds int) string {
+func formatSettingsDuration(seconds int) string {
 	minutes := seconds / 60
 	remainingSeconds := seconds % 60
 	return fmt.Sprintf("%dm%ds", minutes, remainingSeconds)

@@ -29,13 +29,13 @@ func (h *PreAuthHandler) HandleInput(msg tea.Msg, context *StateContext) (StateH
 						Words: 30,
 					},
 				}
-				return NewMainMenuHandler(initMainMenu(&guestUser)), nil
+				return NewMainMenuHandler(&guestUser), nil
 			}
-			switch state := h.authMenu[newCursor].(type) {
+			switch h.authMenu[newCursor].(type) {
 			case Login:
 				return NewLoginHandler(""), nil
 			case Register:
-				return NewRegisterHandler(state.context, "", "", "", ""), nil
+				return NewRegisterHandler(&context.model.context, "", "", "", ""), nil
 			}
 		case "up", "k":
 			if h.cursor == 0 {
@@ -92,8 +92,8 @@ func NewPreAuthHandler(context *database.Context) *PreAuthHandler {
 	return &PreAuthHandler{
 		BaseStateHandler: NewBaseStateHandler(StatePreAuth),
 		authMenu: []State{
-			initRegisterScreen(context, "", "", "", ""),
-			initLoginScreen(""),
+			Register{},
+			Login{},
 			GuestLogin{},
 		},
 		cursor: 0,

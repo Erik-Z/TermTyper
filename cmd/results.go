@@ -8,24 +8,24 @@ import (
 	"github.com/charmbracelet/bubbles/stopwatch"
 )
 
-func (test TimerTest) calculateResults() Results {
-	elapsedMinutes := test.timer.duration.Minutes()
-	wpm := test.base.calculateNormalizedWpm(elapsedMinutes)
+// func (test TimerTest) calculateResults() Results {
+// 	elapsedMinutes := test.timer.duration.Minutes()
+// 	wpm := test.base.calculateNormalizedWpm(elapsedMinutes)
 
-	return Results{
-		wpm:           int(wpm),
-		accuracy:      test.base.calculateAccuracy(),
-		rawWpm:        int(test.base.calculateRawWpm(elapsedMinutes)),
-		cpm:           test.base.calculateCpm(elapsedMinutes),
-		time:          test.timer.duration,
-		wpmEachSecond: test.base.wpmEachSecond,
-		mainMenu:      test.base.mainMenu,
-		resultsSelection: []string{
-			"Main Menu",
-			"Replay",
-		},
-	}
-}
+// 	return Results{
+// 		wpm:           int(wpm),
+// 		accuracy:      test.base.calculateAccuracy(),
+// 		rawWpm:        int(test.base.calculateRawWpm(elapsedMinutes)),
+// 		cpm:           test.base.calculateCpm(elapsedMinutes),
+// 		time:          test.timer.duration,
+// 		wpmEachSecond: test.base.wpmEachSecond,
+// 		mainMenu:      test.base.mainMenu,
+// 		resultsSelection: []string{
+// 			"Main Menu",
+// 			"Replay",
+// 		},
+// 	}
+// }
 
 func (test WordCountTest) calculateResults() Results {
 	elapsedMinutes := test.stopwatch.stopwatch.Elapsed().Minutes()

@@ -4,11 +4,8 @@ import (
 	"fmt"
 	"runtime"
 	"termtyper/database"
-	"termtyper/words"
-	"time"
 
 	"github.com/charmbracelet/bubbles/stopwatch"
-	"github.com/charmbracelet/bubbles/timer"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/muesli/termenv"
 )
@@ -17,67 +14,30 @@ func (m model) Init() tea.Cmd {
 	return nil
 }
 
-func initMainMenu(user *database.ApplicationUser) MainMenu {
-	return MainMenu{
-		MainMenuSelection: []string{
-			"Timer",
-			"Word Count",
-			"Zen",
-			"Config",
-		},
-		currentUser:            user,
-		cursor:                 0,
-		timerTestWordGenerator: words.NewGenerator(),
-		wordTestWordGenerator:  words.NewGenerator(),
-	}
-}
+// func initTimerTest(menu MainMenu) TimerTest {
+// 	return TimerTest{
+// 		timer: Timer{
+// 			timer:     timer.NewWithInterval(30*time.Second, time.Second),
+// 			duration:  30 * time.Second,
+// 			isRunning: false,
+// 			timedout:  false,
+// 		},
+// 		base: TestBase{
+// 			wordsToEnter:  menu.timerTestWordGenerator.Generate("Common words"),
+// 			inputBuffer:   make([]rune, 0),
+// 			rawInputCount: 0,
+// 			mistakes: mistakes{
+// 				mistakesAt:     make(map[int]bool, 0),
+// 				rawMistakesCnt: 0,
+// 			},
+// 			cursor:      0,
+// 			mainMenuOld: menu,
+// 		},
+// 		completed: false,
+// 	}
+// }
 
-func initTimerTest(menu MainMenu) TimerTest {
-	return TimerTest{
-		timer: Timer{
-			timer:     timer.NewWithInterval(30*time.Second, time.Second),
-			duration:  30 * time.Second,
-			isRunning: false,
-			timedout:  false,
-		},
-		base: TestBase{
-			wordsToEnter:  menu.timerTestWordGenerator.Generate("Common words"),
-			inputBuffer:   make([]rune, 0),
-			rawInputCount: 0,
-			mistakes: mistakes{
-				mistakesAt:     make(map[int]bool, 0),
-				rawMistakesCnt: 0,
-			},
-			cursor:   0,
-			mainMenu: menu,
-		},
-		completed: false,
-	}
-}
-
-func initWordCountTest(menu MainMenu) WordCountTest {
-	menu.wordTestWordGenerator.Count = 30
-	return WordCountTest{
-		stopwatch: StopWatch{
-			stopwatch: stopwatch.NewWithInterval(time.Millisecond * 100),
-			isRunning: false,
-		},
-		base: TestBase{
-			wordsToEnter:  menu.wordTestWordGenerator.Generate("Common words"),
-			inputBuffer:   make([]rune, 0),
-			rawInputCount: 0,
-			mistakes: mistakes{
-				mistakesAt:     make(map[int]bool, 0),
-				rawMistakesCnt: 0,
-			},
-			cursor:   0,
-			mainMenu: menu,
-		},
-		completed: false,
-	}
-}
-
-func initZenMode(menu MainMenu) ZenMode {
+func initZenMode(menu MainMenuHandler) ZenMode {
 	return ZenMode{
 		stopwatch: StopWatch{
 			stopwatch: stopwatch.New(),
@@ -91,8 +51,8 @@ func initZenMode(menu MainMenu) ZenMode {
 				mistakesAt:     make(map[int]bool, 0),
 				rawMistakesCnt: 0,
 			},
-			cursor:   0,
-			mainMenu: menu,
+			cursor: 0,
+			//mainMenuOld: menu,
 		},
 	}
 }
@@ -100,7 +60,7 @@ func initZenMode(menu MainMenu) ZenMode {
 func initModel(termProfile termenv.Profile, foregroundColor termenv.Color, width, height int, sess *Session) model {
 	databaseContext := database.InitDB()
 	m := model{
-		state:   initPreAuthentication(&databaseContext),
+		//state:   initPreAuthentication(&databaseContext),
 		width:   width,
 		height:  height,
 		context: databaseContext,

@@ -5,10 +5,39 @@ import (
 	"net/mail"
 	"termtyper/database"
 
+	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/huh"
 	"github.com/charmbracelet/lipgloss"
 )
+
+type Login struct {
+}
+
+type Register struct {
+}
+
+type GuestLogin struct{}
+
+type LoginFormData struct {
+	email    string
+	password string
+}
+
+type RegisterFormData struct {
+	email           string
+	password        string
+	confirmPassword string
+}
+
+type ForgotPassword struct {
+	emailInput textinput.Model
+}
+
+type ResetPassword struct {
+	inputs []textinput.Model
+	cursor int
+}
 
 type LoginHandler struct {
 	*BaseStateHandler
@@ -61,7 +90,7 @@ func (h *LoginHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHan
 		if err == nil && authUser != nil {
 			context.model.session.User = authUser
 			context.model.session.Authenticated = true
-			newState := NewMainMenuHandler(initMainMenu(authUser))
+			newState := NewMainMenuHandler(authUser)
 			return newState, tea.Batch(commands...)
 		} else {
 			newState := NewLoginHandler("❌" + err.Error())
@@ -196,7 +225,7 @@ func (h *RegisterHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 		}
 		context.model.session.User = newUser
 		context.model.session.Authenticated = true
-		MainMenuHandler := NewMainMenuHandler(initMainMenu(newUser))
+		MainMenuHandler := NewMainMenuHandler(newUser)
 		return MainMenuHandler, tea.Batch(commands...)
 	}
 	return h, tea.Batch(commands...)

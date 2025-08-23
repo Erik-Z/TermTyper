@@ -1,66 +1,78 @@
 package cmd
 
 import (
+	"termtyper/database"
+	"termtyper/words"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-// MainMenuHandler handles the main menu state
 type MainMenuHandler struct {
 	*BaseStateHandler
-	menu MainMenu
+	MainMenuSelection      []string
+	cursor                 int
+	timerTestWordGenerator words.WordGenerator
+	wordTestWordGenerator  words.WordGenerator
+	currentUser            *database.ApplicationUser
 }
 
-// NewMainMenuHandler creates a new main menu handler
-func NewMainMenuHandler(menu MainMenu) *MainMenuHandler {
+func NewMainMenuHandler(user *database.ApplicationUser) *MainMenuHandler {
 	return &MainMenuHandler{
 		BaseStateHandler: NewBaseStateHandler(StateMainMenu),
-		menu:             menu,
+		MainMenuSelection: []string{
+			"Timer",
+			"Word Count",
+			"Zen",
+			"Config",
+		},
+		currentUser:            user,
+		cursor:                 0,
+		timerTestWordGenerator: words.NewGenerator(),
+		wordTestWordGenerator:  words.NewGenerator(),
 	}
 }
 
-// HandleInput implements StateHandler
 func (h *MainMenuHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHandler, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
-			switch h.menu.MainMenuSelection[h.menu.cursor] {
+			switch h.MainMenuSelection[h.cursor] {
 			case "Timer":
 				if h.ValidateTransition(StateTimerTest, context) {
-					return NewTimerTestHandler(initTimerTest(h.menu)), nil
+					return NewTimerTestHandler(*h), nil
 				}
 			case "Zen":
 				if h.ValidateTransition(StateZenMode, context) {
-					return NewZenModeHandler(initZenMode(h.menu)), nil
+					//return NewZenModeHandler(initZenMode(h.menu)), nil
 				}
 			case "Word Count":
 				if h.ValidateTransition(StateWordCountTest, context) {
-					return NewWordCountTestHandler(initWordCountTest(h.menu)), nil
+					return NewWordCountTestHandler(*h), nil
 				}
 			case "Config":
 				if h.ValidateTransition(StateSettings, context) {
-					return NewSettingsHandler(initSettings(context.model.session.User)), nil
+					return NewSettingsHandler(context.model.session.User), nil
 				}
 			}
 		case "up", "k":
-			if h.menu.cursor == 0 {
-				h.menu.cursor = len(h.menu.MainMenuSelection) - 1
+			if h.cursor == 0 {
+				h.cursor = len(h.MainMenuSelection) - 1
 			} else {
-				h.menu.cursor--
+				h.cursor--
 			}
 		case "down", "j":
-			if h.menu.cursor == len(h.menu.MainMenuSelection)-1 {
-				h.menu.cursor = 0
+			if h.cursor == len(h.MainMenuSelection)-1 {
+				h.cursor = 0
 			} else {
-				h.menu.cursor++
+				h.cursor++
 			}
 		}
 	}
 	return h, nil
 }
 
-// Render implements StateHandler
 func (h *MainMenuHandler) Render(m *model) string {
 	termWidth, termHeight := m.width-2, m.height-2
 	termtyper := style("TermTyper - Welcome "+m.session.User.Username, m.styles.magenta)
@@ -69,9 +81,9 @@ func (h *MainMenuHandler) Render(m *model) string {
 	var menuItems []string
 	menuItemsStyle := lipgloss.NewStyle().PaddingTop(1)
 
-	for i, choice := range h.menu.MainMenuSelection {
+	for i, choice := range h.MainMenuSelection {
 		choiceShow := style(choice, m.styles.toEnter)
-		choiceShow = wrapWithCursor(h.menu.cursor == i, choiceShow, m.styles.toEnter)
+		choiceShow = wrapWithCursor(h.cursor == i, choiceShow, m.styles.toEnter)
 		choiceShow = menuItemsStyle.Render(choiceShow)
 		menuItems = append(menuItems, choiceShow)
 	}
@@ -87,7 +99,6 @@ func (h *MainMenuHandler) Render(m *model) string {
 	return borderStyle.Render(centeredText)
 }
 
-// ValidateTransition implements StateHandler
 func (h *MainMenuHandler) ValidateTransition(to StateType, context *StateContext) bool {
 	validTransitions := context.transitionMap[StateMainMenu]
 	for _, validState := range validTransitions {

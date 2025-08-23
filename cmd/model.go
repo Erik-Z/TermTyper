@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"termtyper/database"
-	"termtyper/words"
 	"time"
 
 	"github.com/charmbracelet/bubbles/stopwatch"
@@ -21,14 +20,6 @@ type model struct {
 
 type State interface{}
 
-type MainMenu struct {
-	MainMenuSelection      []string
-	cursor                 int
-	timerTestWordGenerator words.WordGenerator
-	wordTestWordGenerator  words.WordGenerator
-	currentUser            *database.ApplicationUser
-}
-
 type TestBase struct {
 	wordsToEnter  []rune
 	inputBuffer   []rune
@@ -37,7 +28,7 @@ type TestBase struct {
 	mistakes      mistakes
 	cursor        int
 	testRecord    []KeyPress
-	mainMenu      MainMenu
+	mainMenu      MainMenuHandler
 }
 
 type KeyPress struct {
@@ -97,7 +88,7 @@ type Results struct {
 	wordList         string
 	test             TestBase
 	wpmEachSecond    []float64
-	mainMenu         MainMenu
+	mainMenu         MainMenuHandler
 	resultsSelection []string
 	cursor           int
 }

@@ -4,9 +4,6 @@ import (
 	"github.com/charmbracelet/bubbles/stopwatch"
 	"github.com/charmbracelet/bubbles/timer"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
-
-	"termtyper/database"
 )
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -26,14 +23,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+c", "esc":
+		case "ctrl+c":
 			return m, tea.Quit
 		}
 	}
 
 	switch state := m.state.(type) {
-	case MainMenu:
-		m.state = state.handleInput(msg, &m)
 
 	case TimerTest:
 		switch msg := msg.(type) {
@@ -52,11 +47,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if state.timer.timer.Timedout() {
 				state.timer.timedout = true
 
-				var results = state.calculateResults()
-				m.state = TimerTestResult{
-					wpmEachSecond: state.base.wpmEachSecond,
-					results:       results,
-				}
+				// var results = state.calculateResults()
+				// m.state = TimerTestResult{
+				// 	wpmEachSecond: state.base.wpmEachSecond,
+				// 	results:       results,
+				// }
 			}
 
 		case tea.KeyMsg:
@@ -72,7 +67,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.state = state.base.mainMenu
 				return m, nil
 			case "ctrl+r":
-				m.state = initTimerTest(state.base.mainMenu)
+				//m.state = initTimerTest(m.stateMachine.currentState.*.base.mainMenu)
 				return m, nil
 			default:
 				switch msg.Type {
@@ -115,7 +110,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.state = state.base.mainMenu
 				return m, nil
 			case "ctrl+r":
-				m.state = initZenMode(state.base.mainMenu)
+				//m.state = initZenMode(state.base.mainMenu)
 				return m, nil
 			case "ctrl+backspace":
 				handleCtrlBackspace(&state.base)
@@ -137,88 +132,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		}
-
-	case WordCountTest:
-		switch msg := msg.(type) {
-		case stopwatch.StartStopMsg:
-
-			stopwatchUpdate, cmdUpdate := state.stopwatch.stopwatch.Update(msg)
-			state.stopwatch.stopwatch = stopwatchUpdate
-			commands = append(commands, cmdUpdate)
-
-			m.state = state
-
-		case stopwatch.TickMsg:
-
-			stopwatchUpdate, cmdUpdate := state.stopwatch.stopwatch.Update(msg)
-			state.stopwatch.stopwatch = stopwatchUpdate
-			commands = append(commands, cmdUpdate)
-
-			elapsedMinutes := state.stopwatch.stopwatch.Elapsed().Minutes()
-			if elapsedMinutes != 0 {
-				state.base.wpmEachSecond = append(state.base.wpmEachSecond, state.base.calculateNormalizedWpm(elapsedMinutes))
-			}
-
-			m.state = state
-
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "enter", "tab":
-			case "ctrl+q":
-				m.state = state.base.mainMenu
-				return m, nil
-			case "ctrl+r":
-				m.state = initWordCountTest(state.base.mainMenu)
-				return m, nil
-			case "ctrl+backspace":
-				handleCtrlBackspace(&state.base)
-				m.state = state
-			case "backspace":
-				handleBackspace(&state.base)
-				recordInput(msg, &state)
-				m.state = state
-			default:
-				switch msg.Type {
-				case tea.KeyRunes, tea.KeySpace:
-					if !state.stopwatch.isRunning {
-						commands = append(commands, state.stopwatch.stopwatch.Init())
-						state.stopwatch.isRunning = true
-					}
-
-					handleCharacterInputFromMsg(msg, &state.base)
-					recordInput(msg, &state)
-
-					m.state = state
-				}
-			}
-		}
-		if len(state.base.wordsToEnter) == len(state.base.inputBuffer) &&
-			!state.base.mistakes.mistakesAt[len(state.base.inputBuffer)-1] {
-			//termenv.DefaultOutput().Reset()
-			results := state.calculateResults()
-
-			results.mainMenu = state.base.mainMenu
-			m.state = WordCountTestResults{
-				wpmEachSecond: state.base.wpmEachSecond,
-				wordCount:     state.base.mainMenu.wordTestWordGenerator.Count,
-				results:       results,
-			}
-		}
-
-	case WordCountTestResults:
-		switch msg := msg.(type) {
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "ctrl+q":
-				m.state = state.results.mainMenu
-				return m, nil
-			case "ctrl+r":
-				m.state = initWordCountTest(state.results.mainMenu)
-				return m, nil
-			}
-		}
-		m.state = state.handleInput(msg)
-
 	case Replay:
 		switch msg := msg.(type) {
 		case stopwatch.StartStopMsg:
@@ -268,88 +181,21 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			m.state = state
 		}
+	}
 
-	case Register:
-		// if !state.isFormInitialized {
-		// 	initCmd := state.form.Init()
-		// 	commands = append(commands, initCmd)
-		// 	state.isFormInitialized = true
-		// }
-
-		// updatedForm, formCmd := state.form.Update(msg)
-		// if f, ok := updatedForm.(*huh.Form); ok {
-		// 	state.form = f
-		// 	m.state = state
-		// 	commands = append(commands, formCmd)
-		// }
-
-		// if state.form.State == huh.StateCompleted {
-		// 	if state.formData.password != state.formData.confirmPassword {
-		// 		newState := initRegisterScreen(
-		// 			state.context,
-		// 			"❌ Passwords must match",
-		// 			state.formData.email,
-		// 			state.formData.password,
-		// 			state.formData.confirmPassword,
-		// 		)
-
-		// 		m.state = newState
-		// 		return m, tea.Batch(commands...)
-		// 	}
-
-		// 	newUser, err := database.CreateUser(m.context.UserRepository, state.formData.email, state.formData.password)
-		// 	if err != nil {
-		// 		newState := initRegisterScreen(
-		// 			state.context,
-		// 			"❌ "+err.Error(),
-		// 			state.formData.email,
-		// 			state.formData.password,
-		// 			state.formData.confirmPassword,
-		// 		)
-
-		// 		m.state = newState
-		// 		return m, tea.Batch(commands...)
-		// 	}
-		// 	m.session.User = newUser
-		// 	m.session.Authenticated = true
-		// 	m.state = initMainMenu(newUser)
-		// }
-
+	switch m.stateMachine.currentState {
+	case StateMainMenu:
+	case StateTimerTest:
 		return m.stateMachine.HandleInput(msg)
-
-	case Login:
-		if !state.isFormInitialized {
-			initCmd := state.form.Init()
-			commands = append(commands, initCmd)
-			state.isFormInitialized = true
-		}
-
-		updatedForm, formCmd := state.form.Update(msg)
-		if f, ok := updatedForm.(*huh.Form); ok {
-			state.form = f
-			m.state = state
-			commands = append(commands, formCmd)
-		}
-
-		if state.form.State == huh.StateCompleted {
-			authUser, err := database.AuthenticateUser(m.context.UserRepository, state.formData.email, state.formData.password)
-			if err == nil && authUser != nil {
-				m.session.User = authUser
-				m.session.Authenticated = true
-				m.state = initMainMenu(authUser)
-			} else {
-				newState := initLoginScreen("❌" + err.Error())
-				newState.formData.email = state.formData.email
-
-				m.state = newState
-			}
-		}
-
-	case PreAuthentication:
+	case StateWordCountTest:
 		return m.stateMachine.HandleInput(msg)
-
-	case Settings:
-		m.state = state.updateSettings(msg)
+	case StateRegister:
+		return m.stateMachine.HandleInput(msg)
+	case StateLogin:
+	case StatePreAuth:
+		return m.stateMachine.HandleInput(msg)
+	case StateSettings:
+		return m.stateMachine.HandleInput(msg)
 	}
 
 	return m, tea.Batch(commands...)
@@ -363,43 +209,6 @@ func forceRender() tea.Cmd {
 	}
 }
 
-func (menu MainMenu) handleInput(msg tea.Msg, m *model) State {
-	newCursor := menu.cursor
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter":
-			if menu.MainMenuSelection[newCursor] == "Timer" {
-				return initTimerTest(menu)
-			} else if menu.MainMenuSelection[newCursor] == "Zen" {
-				return initZenMode(menu)
-			} else if menu.MainMenuSelection[newCursor] == "Word Count" {
-				return initWordCountTest(menu)
-			} else if menu.MainMenuSelection[newCursor] == "Config" {
-				return initSettings(m.session.User)
-			}
-
-		case "up", "k":
-			if menu.cursor == 0 {
-				newCursor = len(menu.MainMenuSelection) - 1
-			} else {
-				newCursor--
-			}
-
-		case "down", "j":
-			if menu.cursor == len(menu.MainMenuSelection)-1 {
-				newCursor = 0
-			} else {
-				newCursor++
-			}
-
-		}
-
-	}
-	menu.cursor = newCursor
-	return menu
-}
-
 func (wordCountTestResults WordCountTestResults) handleInput(msg tea.Msg) State {
 	newCursor := wordCountTestResults.results.cursor
 	switch msg := msg.(type) {
@@ -407,9 +216,9 @@ func (wordCountTestResults WordCountTestResults) handleInput(msg tea.Msg) State 
 		switch msg.String() {
 		case "enter":
 			if wordCountTestResults.results.resultsSelection[newCursor] == "Next Test" {
-				return initWordCountTest(wordCountTestResults.results.mainMenu)
+				//return initWordCountTest(wordCountTestResults.results.mainMenu)
 			} else if wordCountTestResults.results.resultsSelection[newCursor] == "Main Menu" {
-				return initMainMenu(wordCountTestResults.results.mainMenu.currentUser)
+				return NewMainMenuHandler(wordCountTestResults.results.mainMenu.currentUser)
 			} else if wordCountTestResults.results.resultsSelection[newCursor] == "Replay" {
 				return wordCountTestResults.showReplay()
 			}

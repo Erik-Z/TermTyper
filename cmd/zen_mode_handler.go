@@ -26,7 +26,7 @@ func (h *ZenModeHandler) HandleInput(msg tea.Msg, context *StateContext) (StateH
 		switch msg.String() {
 		case "esc":
 			if h.ValidateTransition(StateMainMenu, context) {
-				return NewMainMenuHandler(initMainMenu(context.model.session.User)), nil
+				return NewMainMenuHandler(context.model.session.User), nil
 			}
 			// 	case "enter":
 			// 		if !h.zen.started {

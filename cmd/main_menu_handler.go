@@ -45,7 +45,7 @@ func (h *MainMenuHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 				}
 			case "Zen":
 				if h.ValidateTransition(StateZenMode, context) {
-					//return NewZenModeHandler(initZenMode(h.menu)), nil
+					return NewZenModeHandler(*h), nil
 				}
 			case "Word Count":
 				if h.ValidateTransition(StateWordCountTest, context) {

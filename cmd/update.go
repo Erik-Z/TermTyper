@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"github.com/charmbracelet/bubbles/stopwatch"
-	"github.com/charmbracelet/bubbles/timer"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
@@ -30,108 +29,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch state := m.state.(type) {
 
-	case TimerTest:
-		switch msg := msg.(type) {
-		case timer.TickMsg:
-			timerUpdate, cmdUpdate := state.timer.timer.Update(msg)
-			state.timer.timer = timerUpdate
-			commands = append(commands, cmdUpdate)
-
-			elapsedMinute := state.timer.duration.Minutes() - state.timer.timer.Timeout.Minutes()
-			if elapsedMinute != 0 {
-				state.base.wpmEachSecond = append(state.base.wpmEachSecond, state.base.calculateNormalizedWpm(elapsedMinute))
-			}
-
-			m.state = state
-
-			if state.timer.timer.Timedout() {
-				state.timer.timedout = true
-
-				// var results = state.calculateResults()
-				// m.state = TimerTestResult{
-				// 	wpmEachSecond: state.base.wpmEachSecond,
-				// 	results:       results,
-				// }
-			}
-
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "backspace":
-				handleBackspace(&state.base)
-				m.state = state
-			case "ctrl+t":
-				// Delete entire word
-				handleCtrlBackspace(&state.base)
-				m.state = state
-			case "ctrl+w":
-				m.state = state.base.mainMenu
-				return m, nil
-			case "ctrl+r":
-				//m.state = initTimerTest(m.stateMachine.currentState.*.base.mainMenu)
-				return m, nil
-			default:
-				switch msg.Type {
-				case tea.KeyRunes:
-					if !state.timer.isRunning {
-						commands = append(commands, state.timer.timer.Init())
-						state.timer.isRunning = true
-					}
-
-					handleCharacterInputFromMsg(msg, &state.base)
-					m.state = state
-				}
-			}
-		}
-
-	case ZenMode:
-		switch msg := msg.(type) {
-		case stopwatch.StartStopMsg:
-			stopwatchUpdate, cmdUpdate := state.stopwatch.stopwatch.Update(msg)
-			state.stopwatch.stopwatch = stopwatchUpdate
-			commands = append(commands, cmdUpdate)
-
-			m.state = state
-		case stopwatch.TickMsg:
-			stopwatchUpdate, cmdUpdate := state.stopwatch.stopwatch.Update(msg)
-			state.stopwatch.stopwatch = stopwatchUpdate
-			commands = append(commands, cmdUpdate)
-
-			elapsedMinutes := state.stopwatch.stopwatch.Elapsed().Minutes()
-			if elapsedMinutes != 0 {
-				state.base.wpmEachSecond = append(state.base.wpmEachSecond, state.base.calculateNormalizedWpm(elapsedMinutes))
-			}
-
-			m.state = state
-
-		case tea.KeyMsg:
-			switch msg.String() {
-			case "enter", "tab":
-			case "ctrl+q":
-				m.state = state.base.mainMenu
-				return m, nil
-			case "ctrl+r":
-				//m.state = initZenMode(state.base.mainMenu)
-				return m, nil
-			case "ctrl+backspace":
-				handleCtrlBackspace(&state.base)
-				m.state = state
-			case "backspace":
-				handleBackspace(&state.base)
-				m.state = state
-			default:
-				switch msg.Type {
-				case tea.KeyRunes:
-					if !state.stopwatch.isRunning {
-						commands = append(commands, state.stopwatch.stopwatch.Init())
-						state.stopwatch.isRunning = true
-					}
-
-					handleCharacterInputZenMode(msg, &state.base)
-					m.state = state
-				}
-			}
-
-		}
 	case Replay:
 		switch msg := msg.(type) {
 		case stopwatch.StartStopMsg:
@@ -189,6 +86,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.stateMachine.HandleInput(msg)
 	case StateWordCountTest:
 		return m.stateMachine.HandleInput(msg)
+	case StateZenMode:
+		return m.stateMachine.HandleInput(msg)
 	case StateRegister:
 		return m.stateMachine.HandleInput(msg)
 	case StateLogin:
@@ -207,39 +106,6 @@ func forceRender() tea.Cmd {
 	return func() tea.Msg {
 		return forceRenderMsg{}
 	}
-}
-
-func (wordCountTestResults WordCountTestResults) handleInput(msg tea.Msg) State {
-	newCursor := wordCountTestResults.results.cursor
-	switch msg := msg.(type) {
-	case tea.KeyMsg:
-		switch msg.String() {
-		case "enter":
-			if wordCountTestResults.results.resultsSelection[newCursor] == "Next Test" {
-				//return initWordCountTest(wordCountTestResults.results.mainMenu)
-			} else if wordCountTestResults.results.resultsSelection[newCursor] == "Main Menu" {
-				return NewMainMenuHandler(wordCountTestResults.results.mainMenu.currentUser)
-			} else if wordCountTestResults.results.resultsSelection[newCursor] == "Replay" {
-				return wordCountTestResults.showReplay()
-			}
-		case "left", "h":
-			if wordCountTestResults.results.cursor == 0 {
-				newCursor = len(wordCountTestResults.results.resultsSelection) - 1
-			} else {
-				newCursor--
-			}
-
-		case "right", "l":
-			if wordCountTestResults.results.cursor == len(wordCountTestResults.results.resultsSelection)-1 {
-				newCursor = 0
-			} else {
-				newCursor++
-			}
-		}
-
-	}
-	wordCountTestResults.results.cursor = newCursor
-	return wordCountTestResults
 }
 
 func handleBackspace(base *TestBase) {

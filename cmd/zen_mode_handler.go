@@ -3,80 +3,99 @@ package cmd
 import (
 	"strings"
 
+	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
 
-// ZenModeHandler handles the zen mode state
 type ZenModeHandler struct {
 	*BaseStateHandler
-	zen ZenMode
+	base      TestBase
+	stopwatch StopWatch
 }
 
-func NewZenModeHandler(zen ZenMode) *ZenModeHandler {
+func NewZenModeHandler(menu MainMenuHandler) *ZenModeHandler {
 	return &ZenModeHandler{
 		BaseStateHandler: NewBaseStateHandler(StateZenMode),
-		zen:              zen,
+		stopwatch: StopWatch{
+			stopwatch: stopwatch.New(),
+			isRunning: false,
+		},
+		base: TestBase{
+			wordsToEnter:  make([]rune, 0),
+			inputBuffer:   make([]rune, 0),
+			rawInputCount: 0,
+			mistakes: mistakes{
+				mistakesAt:     make(map[int]bool, 0),
+				rawMistakesCnt: 0,
+			},
+			cursor:   0,
+			mainMenu: menu,
+		},
 	}
 }
 
 func (h *ZenModeHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHandler, tea.Cmd) {
+	var commands []tea.Cmd
 	switch msg := msg.(type) {
+	case stopwatch.StartStopMsg:
+		stopwatchUpdate, cmdUpdate := h.stopwatch.stopwatch.Update(msg)
+		h.stopwatch.stopwatch = stopwatchUpdate
+		commands = append(commands, cmdUpdate)
+
+	case stopwatch.TickMsg:
+		stopwatchUpdate, cmdUpdate := h.stopwatch.stopwatch.Update(msg)
+		h.stopwatch.stopwatch = stopwatchUpdate
+		commands = append(commands, cmdUpdate)
+
+		elapsedMinutes := h.stopwatch.stopwatch.Elapsed().Minutes()
+		if elapsedMinutes != 0 {
+			h.base.wpmEachSecond = append(h.base.wpmEachSecond, h.base.calculateNormalizedWpm(elapsedMinutes))
+		}
+
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc":
 			if h.ValidateTransition(StateMainMenu, context) {
 				return NewMainMenuHandler(context.model.session.User), nil
 			}
-			// 	case "enter":
-			// 		if !h.zen.started {
-			// 			h.zen.started = true
-			// 			h.zen.stopwatch.Start()
-			// 			return h, h.zen.stopwatch.Tick()
-			// 		}
-			// 	case "tab":
-			// 		if h.zen.started {
-			// 			h.zen.currentWordIndex++
-			// 			if h.zen.currentWordIndex >= len(h.zen.words) {
-			// 				h.zen.finished = true
-			// 				h.zen.stopwatch.Stop()
-			// 				if h.ValidateTransition(StateResults, context) {
-			// 					return NewResultsHandler(initResults(h.zen)), nil
-			// 				}
-			// 			}
-			// 		}
-			// 	default:
-			// 		if h.zen.started && !h.zen.finished {
-			// 			// Handle typing input
-			// 			h.zen.currentInput += msg.String()
-			// 			if len(h.zen.currentInput) > len(h.zen.words[h.zen.currentWordIndex]) {
-			// 				h.zen.currentInput = h.zen.currentInput[:len(h.zen.words[h.zen.currentWordIndex])]
-			// 			}
-			// 		}
-			// 	}
-			// case stopwatch.TickMsg:
-			// 	if h.zen.started && !h.zen.finished {
-			// 		return h, h.zen.stopwatch.Tick()
+		case "ctrl+w":
+			return NewMainMenuHandler(context.model.session.User), nil
+		case "ctrl+r":
+			return NewZenModeHandler(h.base.mainMenu), nil
+		case "ctrl+backspace":
+			handleCtrlBackspace(&h.base)
+		case "backspace":
+			handleBackspace(&h.base)
+		default:
+			switch msg.Type {
+			case tea.KeyRunes:
+				if !h.stopwatch.isRunning {
+					commands = append(commands, h.stopwatch.stopwatch.Init())
+					h.stopwatch.isRunning = true
+				}
+
+				handleCharacterInputZenMode(msg, &h.base)
+			}
 		}
 	}
-	return h, nil
+	return h, tea.Batch(commands...)
 }
 
-// Render implements StateHandler
 func (h *ZenModeHandler) Render(m *model) string {
 	s := ""
 	termWidth, termHeight := m.width-2, m.height-2
 
-	stopwatch := style(h.zen.stopwatch.stopwatch.View(), m.styles.magenta)
-	paragraphView := h.zen.base.renderParagraphZenMode(lineLenLimit, m.styles)
+	stopwatch := style(h.stopwatch.stopwatch.View(), m.styles.magenta)
+	paragraphView := h.base.renderParagraphZenMode(lineLenLimit, m.styles)
 	lines := strings.Split(paragraphView, "\n")
 
-	cursorLine := findCursorLine(strings.Split(paragraphView, "\n"), h.zen.base.cursor)
+	cursorLine := findCursorLine(strings.Split(paragraphView, "\n"), h.base.cursor)
 	linesAroundCursor := strings.Join(getLinesAroundCursor(lines, cursorLine), "\n")
 	s += positionVertically(termHeight)
 
 	s += stopwatch + "\n\n" + linesAroundCursor
-	if !h.zen.stopwatch.isRunning {
+	if !h.stopwatch.isRunning {
 		s += "\n\n\n"
 		s += style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter)
 		//s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter))

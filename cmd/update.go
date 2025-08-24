@@ -1,14 +1,12 @@
 package cmd
 
 import (
-	"github.com/charmbracelet/bubbles/stopwatch"
 	tea "github.com/charmbracelet/bubbletea"
 )
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.session.mu.Lock()
 	defer m.session.mu.Unlock()
-	var commands []tea.Cmd
 	switch msg := msg.(type) {
 	case forceRenderMsg:
 
@@ -27,77 +25,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	switch state := m.state.(type) {
-
-	case Replay:
-		switch msg := msg.(type) {
-		case stopwatch.StartStopMsg:
-			stopwatchUpdate, cmdUpdate := state.stopwatch.stopwatch.Update(msg)
-			state.stopwatch.stopwatch = stopwatchUpdate
-			commands = append(commands, cmdUpdate)
-
-			m.state = state
-		case stopwatch.TickMsg:
-			stopwatchUpdate, cmdUpdate := state.stopwatch.stopwatch.Update(msg)
-			state.stopwatch.stopwatch = stopwatchUpdate
-			commands = append(commands, cmdUpdate)
-
-			m.state = state
-		case tea.KeyMsg:
-			if !state.isReplayInProcess {
-				state.isReplayInProcess = true
-				m.state = state
-			}
-		}
-
-		if state.isReplayInProcess {
-			if !state.stopwatch.isRunning && len(state.test.testRecord) > 0 {
-				commands = append(commands, state.stopwatch.stopwatch.Init())
-				state.stopwatch.isRunning = true
-			}
-
-			if len(state.test.testRecord) > 0 {
-				currentKeyPress := state.test.testRecord[0]
-				if currentKeyPress.timestamp <= state.stopwatch.stopwatch.Elapsed().Milliseconds() {
-					switch currentKeyPress.key {
-					case '\b':
-						handleBackspace(&state.test)
-					default:
-						handleCharacterInputFromRune(currentKeyPress.key, &state.test)
-					}
-					state.test.testRecord = state.test.testRecord[1:]
-				}
-			}
-
-			if len(state.test.wordsToEnter) == len(state.test.inputBuffer) &&
-				!state.test.mistakes.mistakesAt[len(state.test.inputBuffer)-1] {
-
-				commands = append(commands, state.stopwatch.stopwatch.Stop())
-				state.stopwatch.isRunning = false
-			}
-
-			m.state = state
-		}
-	}
-
-	switch m.stateMachine.currentState {
-	case StateMainMenu:
-	case StateTimerTest:
-		return m.stateMachine.HandleInput(msg)
-	case StateWordCountTest:
-		return m.stateMachine.HandleInput(msg)
-	case StateZenMode:
-		return m.stateMachine.HandleInput(msg)
-	case StateRegister:
-		return m.stateMachine.HandleInput(msg)
-	case StateLogin:
-	case StatePreAuth:
-		return m.stateMachine.HandleInput(msg)
-	case StateSettings:
-		return m.stateMachine.HandleInput(msg)
-	}
-
-	return m, tea.Batch(commands...)
+	return m.stateMachine.HandleInput(msg)
 }
 
 type forceRenderMsg struct{}
@@ -199,7 +127,7 @@ func handleCharacterInputZenMode(msg tea.KeyMsg, base *TestBase) {
 	base.cursor = newCursorPosition
 }
 
-func recordInput(msg tea.KeyMsg, state *WordCountTest) {
+func recordInput(msg tea.KeyMsg, state *WordCountTestHandler) {
 	var keyPress KeyPress
 	if msg.String() == "backspace" {
 		keyPress = KeyPress{

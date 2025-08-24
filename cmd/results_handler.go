@@ -10,14 +10,14 @@ import (
 
 type ResultsHandler struct {
 	*BaseStateHandler
-	testType         string
-	wpm              int
-	accuracy         float64
-	deltaWpm         float64
-	rawWpm           int
-	cpm              int
-	time             time.Duration
-	wordList         string
+	testType string
+	wpm      int
+	accuracy float64
+	//deltaWpm         float64
+	rawWpm int
+	cpm    int
+	time   time.Duration
+	//wordList         string
 	test             TestBase
 	wpmEachSecond    []float64
 	mainMenu         MainMenuHandler
@@ -51,7 +51,7 @@ func (h *ResultsHandler) HandleInput(msg tea.Msg, context *StateContext) (StateH
 			} else if h.resultsSelection[newCursor] == "Main Menu" {
 				return NewMainMenuHandler(context.model.session.User), nil
 			} else if h.resultsSelection[newCursor] == "Replay" {
-				//return wordCountTestResults.showReplay()
+				return NewReplayHandler(*h), nil
 			}
 
 		case "left", "h":
@@ -90,6 +90,7 @@ func (h *ResultsHandler) Render(m *model) string {
 	// 	content = append(content, fmt.Sprintf("Words: %d/%d", h.results.wordsTyped, h.results.targetWords))
 	// 	content = append(content, fmt.Sprintf("Time: %s", formatDuration(h.results.duration)))
 	// }
+
 	var menuItems []string
 	menuItemsStyle := lipgloss.NewStyle().Padding(0, 2, 0, 2)
 	for i, choice := range h.resultsSelection {

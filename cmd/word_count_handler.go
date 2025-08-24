@@ -71,6 +71,7 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 			return NewWordCountTestHandler(h.base.mainMenu), nil
 		case "backspace":
 			handleBackspace(&h.base)
+			recordInput(msg, h)
 		case "ctrl+t":
 			// Delete entire word
 			handleCtrlBackspace(&h.base)
@@ -82,7 +83,7 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 					h.stopwatch.isRunning = true
 				}
 				handleCharacterInputFromMsg(msg, &h.base)
-				//recordInput(msg, &state)
+				recordInput(msg, h)
 			}
 		}
 	}
@@ -140,6 +141,7 @@ func (test WordCountTestHandler) calculateResults() ResultsHandler {
 		rawWpm:        int(test.base.calculateRawWpm(elapsedMinutes)),
 		cpm:           test.base.calculateCpm(elapsedMinutes),
 		time:          test.stopwatch.stopwatch.Elapsed(),
+		test:          test.base,
 		wpmEachSecond: test.base.wpmEachSecond,
 		mainMenu:      test.base.mainMenu,
 		resultsSelection: []string{

@@ -47,56 +47,11 @@ type TimerTest struct {
 	timer     Timer
 }
 
-type TimerTestResult struct {
-	wpmEachSecond []float64
-	results       Results
-}
-
 type Timer struct {
 	timer     timer.Model
 	duration  time.Duration
 	timedout  bool
 	isRunning bool
-}
-
-type ZenMode struct {
-	base      TestBase
-	stopwatch StopWatch
-}
-
-type WordCountTest struct {
-	stopwatch StopWatch
-	base      TestBase
-	completed bool
-}
-
-type Replay struct {
-	test              TestBase
-	results           *WordCountTestResults
-	stopwatch         StopWatch
-	isReplayInProcess bool
-}
-
-type Results struct {
-	testType         string
-	wpm              int
-	accuracy         float64
-	deltaWpm         float64
-	rawWpm           int
-	cpm              int
-	time             time.Duration
-	wordList         string
-	test             TestBase
-	wpmEachSecond    []float64
-	mainMenu         MainMenuHandler
-	resultsSelection []string
-	cursor           int
-}
-
-type WordCountTestResults struct {
-	wpmEachSecond []float64
-	wordCount     int
-	results       Results
 }
 
 type StopWatch struct {

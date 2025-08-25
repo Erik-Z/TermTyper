@@ -58,7 +58,7 @@ func (h *TimerTestHandler) HandleInput(msg tea.Msg, context *StateContext) (Stat
 		if h.timer.timer.Timedout() {
 			h.timer.timedout = true
 
-			results := h.calculateResults()
+			results := h.calculateResults(context.model)
 			return &results, tea.Batch(commands...)
 		}
 
@@ -130,9 +130,11 @@ func (h *TimerTestHandler) ValidateTransition(to StateType, context *StateContex
 	return false
 }
 
-func (test TimerTestHandler) calculateResults() ResultsHandler {
+func (test TimerTestHandler) calculateResults(m *model) ResultsHandler {
 	elapsedMinutes := test.timer.duration.Minutes()
 	wpm := test.base.calculateNormalizedWpm(elapsedMinutes)
+	wpmChart := NewWPMChartBubble(m.width/2, m.height/2)
+	wpmChart.UpdateData(test.base.wpmEachSecond)
 
 	return ResultsHandler{
 		testType:      "timer",
@@ -148,5 +150,6 @@ func (test TimerTestHandler) calculateResults() ResultsHandler {
 			"Main Menu",
 			"Replay",
 		},
+		wpmChart: wpmChart,
 	}
 }

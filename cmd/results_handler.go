@@ -25,6 +25,7 @@ type ResultsHandler struct {
 	mainMenu         MainMenuHandler
 	resultsSelection []string
 	cursor           int
+	wpmChart         *WPMChartBubble
 }
 
 func NewResultsHandler() *ResultsHandler {
@@ -94,7 +95,7 @@ func (h *ResultsHandler) Render(m *model) string {
 	// }
 
 	var menuItems []string
-	menuItemsStyle := lipgloss.NewStyle().Padding(0, 2, 0, 2)
+	menuItemsStyle := lipgloss.NewStyle().Padding(0, 0, 0, 0)
 	for i, choice := range h.resultsSelection {
 		choiceShow := style(choice, m.styles.toEnter)
 		choiceShow = wrapWithCursor(h.cursor == i, choiceShow, m.styles.correct)
@@ -106,8 +107,9 @@ func (h *ResultsHandler) Render(m *model) string {
 
 	fullParagraph := lipgloss.JoinVertical(
 		lipgloss.Center, resultsStyle.Padding(0).Render(title),
-		resultsStyle.Padding(0).Render(content...),
-		resultsStyle.Render(resultsMenu),
+		menuItemsStyle.Padding(0).Render(content...),
+		h.wpmChart.View(),
+		menuItemsStyle.Render(resultsMenu),
 	)
 	s := lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, fullParagraph)
 
@@ -135,11 +137,11 @@ func (base TestBase) calculateRawWpm(elapsedMinutes float64) float64 {
 	return base.calculateWpm(len(strings.Split(string(base.inputBuffer), " ")), elapsedMinutes)
 }
 
-func (base TestBase) calculateWpm(wordCount int, elapsedMinutes float64) float64 {
+func (base TestBase) calculateWpm(characterCount int, elapsedMinutes float64) float64 {
 	if elapsedMinutes == 0 {
 		return 0
 	} else {
-		grossWpm := float64(wordCount) / elapsedMinutes
+		grossWpm := float64(characterCount) / elapsedMinutes
 		netWpm := grossWpm - float64(len(base.mistakes.mistakesAt))/elapsedMinutes
 
 		return math.Max(0, netWpm)

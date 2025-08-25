@@ -90,7 +90,7 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 	if len(h.base.wordsToEnter) == len(h.base.inputBuffer) &&
 		!h.base.mistakes.mistakesAt[len(h.base.inputBuffer)-1] {
 		//termenv.DefaultOutput().Reset()
-		results := h.calculateResults()
+		results := h.calculateResults(context.model)
 		return &results, tea.Batch(commands...)
 	}
 
@@ -129,9 +129,11 @@ func (h *WordCountTestHandler) ValidateTransition(to StateType, context *StateCo
 	return false
 }
 
-func (test WordCountTestHandler) calculateResults() ResultsHandler {
+func (test WordCountTestHandler) calculateResults(m *model) ResultsHandler {
 	elapsedMinutes := test.stopwatch.stopwatch.Elapsed().Minutes()
 	wpm := test.base.calculateNormalizedWpm(elapsedMinutes)
+	wpmChart := NewWPMChartBubble(m.width/2, m.height/2)
+	wpmChart.UpdateData(test.base.wpmEachSecond)
 
 	return ResultsHandler{
 		testType:      "wordcount",
@@ -148,5 +150,6 @@ func (test WordCountTestHandler) calculateResults() ResultsHandler {
 			"Main Menu",
 			"Replay",
 		},
+		wpmChart: wpmChart,
 	}
 }

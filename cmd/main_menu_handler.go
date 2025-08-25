@@ -98,13 +98,3 @@ func (h *MainMenuHandler) Render(m *model) string {
 
 	return borderStyle.Render(centeredText)
 }
-
-func (h *MainMenuHandler) ValidateTransition(to StateType, context *StateContext) bool {
-	validTransitions := context.transitionMap[StateMainMenu]
-	for _, validState := range validTransitions {
-		if validState == to {
-			return true
-		}
-	}
-	return false
-}

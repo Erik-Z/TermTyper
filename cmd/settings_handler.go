@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"termtyper/database"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -11,6 +12,22 @@ type SettingsHandler struct {
 	*BaseStateHandler
 	settingsCursor    int
 	settingSelections []TestSetting
+}
+
+type TestSetting interface {
+	render(styles Styles) string
+}
+
+type TimerSettings struct {
+	timerCursor     int
+	timerSelection  []int
+	selectionCursor int
+}
+
+type WordsSettings struct {
+	wordsCursor     int
+	wordsSelection  []int
+	selectionCursor int
 }
 
 func NewSettingsHandler(user *database.ApplicationUser) *SettingsHandler {
@@ -89,14 +106,38 @@ func (h *SettingsHandler) Render(m *model) string {
 	return centeredText
 }
 
-func (h *SettingsHandler) ValidateTransition(to StateType, context *StateContext) bool {
-	validTransitions := context.transitionMap[StateSettings]
-	for _, validState := range validTransitions {
-		if validState == to {
-			return true
+func (t TimerSettings) render(style Styles) string {
+	selections := []string{formatSettingsDuration(t.timerSelection[t.timerCursor])}
+	selectionsStr := showSelections(selections, t.selectionCursor, style)
+	return fmt.Sprintf("%s %s", "Timer", selectionsStr)
+}
+
+func (w WordsSettings) render(style Styles) string {
+	selections := []string{fmt.Sprintf("%d", w.wordsSelection[w.wordsCursor])}
+	selectionsStr := showSelections(selections, w.selectionCursor, style)
+	return fmt.Sprintf("%s %s", "Words", selectionsStr)
+}
+
+func findTimerIndex(config *database.UserConfig, timerSelection []int) int {
+	for i, num := range timerSelection {
+		if num == config.Time {
+			return i
 		}
 	}
-	return false
+	return 0
+}
+
+func showSelections(selections []string, cursor int, styles Styles) string {
+	var selectionsStr string
+	for i, option := range selections {
+		if i+1 == cursor {
+			selectionsStr += "[" + style(option, styles.magenta) + "]"
+		} else {
+			selectionsStr += "[" + style(option, styles.toEnter) + "]"
+		}
+		selectionsStr += " "
+	}
+	return selectionsStr
 }
 
 func findWordsIndex(config *database.UserConfig, wordCountSelection []int) int {
@@ -106,4 +147,10 @@ func findWordsIndex(config *database.UserConfig, wordCountSelection []int) int {
 		}
 	}
 	return 0
+}
+
+func formatSettingsDuration(seconds int) string {
+	minutes := seconds / 60
+	remainingSeconds := seconds % 60
+	return fmt.Sprintf("%dm%ds", minutes, remainingSeconds)
 }

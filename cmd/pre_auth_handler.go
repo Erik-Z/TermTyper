@@ -33,9 +33,17 @@ func (h *PreAuthHandler) HandleInput(msg tea.Msg, context *StateContext) (StateH
 			}
 			switch h.authMenu[newCursor].(type) {
 			case Login:
-				return NewLoginHandler(""), nil
+				var commands []tea.Cmd
+				newLoginHandler := NewLoginHandler("")
+				initCmd := newLoginHandler.form.Init()
+				commands = append(commands, initCmd)
+				return newLoginHandler, tea.Batch(commands...)
 			case Register:
-				return NewRegisterHandler(&context.model.context, "", "", "", ""), nil
+				var commands []tea.Cmd
+				newRegisterHandler := NewRegisterHandler(&context.model.context, "", "", "", "")
+				initCmd := newRegisterHandler.form.Init()
+				commands = append(commands, initCmd)
+				return newRegisterHandler, tea.Batch(commands...)
 			}
 		case "up", "k":
 			if h.cursor == 0 {

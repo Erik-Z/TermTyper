@@ -5,11 +5,6 @@ import (
 	"termtyper/database"
 )
 
-type Settings struct {
-	settingsCursor    int
-	settingSelections []TestSetting
-}
-
 type TestSetting interface {
 	render(styles Styles) string
 }

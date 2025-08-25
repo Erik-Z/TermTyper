@@ -10,7 +10,6 @@ import (
 )
 
 type model struct {
-	state         State
 	stateMachine  *StateMachine
 	styles        Styles
 	width, height int
@@ -39,12 +38,6 @@ type KeyPress struct {
 type mistakes struct {
 	mistakesAt     map[int]bool
 	rawMistakesCnt int
-}
-
-type TimerTest struct {
-	base      TestBase
-	completed bool
-	timer     Timer
 }
 
 type Timer struct {

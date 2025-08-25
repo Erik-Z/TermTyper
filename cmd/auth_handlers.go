@@ -41,10 +41,9 @@ type ResetPassword struct {
 
 type LoginHandler struct {
 	*BaseStateHandler
-	form              *huh.Form
-	formData          *LoginFormData
-	isFormInitialized bool
-	errorMessage      string
+	form         *huh.Form
+	formData     *LoginFormData
+	errorMessage string
 }
 
 func NewLoginHandler(errorMessage string) *LoginHandler {
@@ -63,21 +62,15 @@ func NewLoginHandler(errorMessage string) *LoginHandler {
 	)
 
 	return &LoginHandler{
-		BaseStateHandler:  NewBaseStateHandler(StateLogin),
-		form:              form,
-		formData:          data,
-		isFormInitialized: false,
-		errorMessage:      errorMessage,
+		BaseStateHandler: NewBaseStateHandler(StateLogin),
+		form:             form,
+		formData:         data,
+		errorMessage:     errorMessage,
 	}
 }
 
 func (h *LoginHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHandler, tea.Cmd) {
 	var commands []tea.Cmd
-	if !h.isFormInitialized {
-		initCmd := h.form.Init()
-		commands = append(commands, initCmd)
-		h.isFormInitialized = true
-	}
 
 	updatedForm, formCmd := h.form.Update(msg)
 	if f, ok := updatedForm.(*huh.Form); ok {
@@ -93,9 +86,10 @@ func (h *LoginHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHan
 			newState := NewMainMenuHandler(authUser)
 			return newState, tea.Batch(commands...)
 		} else {
-			newState := NewLoginHandler("❌" + err.Error())
-			newState.formData.email = h.formData.email
-			return newState, tea.Batch(commands...)
+			newLoginHandler := NewLoginHandler("❌" + err.Error())
+			newLoginHandler.formData.email = h.formData.email
+			commands = append(commands, newLoginHandler.form.Init())
+			return newLoginHandler, tea.Batch(commands...)
 		}
 	}
 	return h, tea.Batch(commands...)
@@ -125,11 +119,10 @@ func (h *LoginHandler) ValidateTransition(to StateType, context *StateContext) b
 
 type RegisterHandler struct {
 	*BaseStateHandler
-	context           *database.Context
-	form              *huh.Form
-	formData          *RegisterFormData
-	isFormInitialized bool
-	errorMessage      string
+	context      *database.Context
+	form         *huh.Form
+	formData     *RegisterFormData
+	errorMessage string
 }
 
 func NewRegisterHandler(context *database.Context,
@@ -174,24 +167,16 @@ func NewRegisterHandler(context *database.Context,
 	)
 
 	return &RegisterHandler{
-		BaseStateHandler:  NewBaseStateHandler(StateRegister),
-		context:           context,
-		form:              form,
-		formData:          data,
-		isFormInitialized: false,
-		errorMessage:      errorMessage,
+		BaseStateHandler: NewBaseStateHandler(StateRegister),
+		context:          context,
+		form:             form,
+		formData:         data,
+		errorMessage:     errorMessage,
 	}
 }
 
-// TODO: form only renders after mouse movement. Fix this. Should be similar to replay.
 func (h *RegisterHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHandler, tea.Cmd) {
 	var commands []tea.Cmd
-	if !h.isFormInitialized {
-		initCmd := h.form.Init()
-		commands = append(commands, initCmd)
-		h.isFormInitialized = true
-	}
-
 	updatedForm, formCmd := h.form.Update(msg)
 	if f, ok := updatedForm.(*huh.Form); ok {
 		h.form = f

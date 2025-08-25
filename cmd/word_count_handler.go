@@ -65,10 +65,9 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 			if h.ValidateTransition(StateMainMenu, context) {
 				return NewMainMenuHandler(context.model.session.User), nil
 			}
-		case "ctrl+w":
-			return NewMainMenuHandler(context.model.session.User), nil
 		case "ctrl+r":
 			return NewWordCountTestHandler(h.base.mainMenu), nil
+
 		case "backspace":
 			handleBackspace(&h.base)
 			recordInput(msg, h)

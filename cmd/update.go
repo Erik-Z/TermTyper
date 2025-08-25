@@ -8,7 +8,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	m.session.mu.Lock()
 	defer m.session.mu.Unlock()
 	switch msg := msg.(type) {
-	case forceRenderMsg:
 
 	case tea.WindowSizeMsg:
 		if msg.Width == 0 && msg.Height == 0 {
@@ -26,14 +25,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m.stateMachine.HandleInput(msg)
-}
-
-type forceRenderMsg struct{}
-
-func forceRender() tea.Cmd {
-	return func() tea.Msg {
-		return forceRenderMsg{}
-	}
 }
 
 func handleBackspace(base *TestBase) {

@@ -192,6 +192,8 @@ func (h *RegisterHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 				h.formData.password,
 				h.formData.confirmPassword,
 			)
+			initCmd := newHandler.form.Init()
+			commands = append(commands, initCmd)
 
 			return newHandler, tea.Batch(commands...)
 		}
@@ -205,6 +207,8 @@ func (h *RegisterHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 				h.formData.password,
 				h.formData.confirmPassword,
 			)
+			initCmd := newHandler.form.Init()
+			commands = append(commands, initCmd)
 
 			return newHandler, tea.Batch(commands...)
 		}

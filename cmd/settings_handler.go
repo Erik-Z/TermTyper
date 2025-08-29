@@ -8,14 +8,20 @@ import (
 	"github.com/charmbracelet/lipgloss"
 )
 
+//TODO: add "unsaved settings. Do you want to save before returning to main menu"
+
 type SettingsHandler struct {
 	*BaseStateHandler
 	settingsCursor    int
 	settingSelections []TestSetting
+	userConfig        database.UserConfig
 }
 
 type TestSetting interface {
 	render(styles Styles) string
+	MoveLeft()
+	MoveRight()
+	SaveSettings(context *StateContext)
 }
 
 type TimerSettings struct {
@@ -37,19 +43,20 @@ func NewSettingsHandler(user *database.ApplicationUser) *SettingsHandler {
 	timerSettings := TimerSettings{
 		timerSelection:  timerSelection,
 		timerCursor:     findTimerIndex(user.Config, timerSelection),
-		selectionCursor: 0,
+		selectionCursor: findTimerIndex(user.Config, timerSelection),
 	}
 
 	wordsSettings := WordsSettings{
 		wordsSelection:  wordCountSelection,
 		wordsCursor:     findWordsIndex(user.Config, wordCountSelection),
-		selectionCursor: 0,
+		selectionCursor: findTimerIndex(user.Config, wordCountSelection),
 	}
 
 	return &SettingsHandler{
 		BaseStateHandler:  NewBaseStateHandler(StateSettings),
 		settingsCursor:    0,
-		settingSelections: []TestSetting{timerSettings, wordsSettings},
+		settingSelections: []TestSetting{&timerSettings, &wordsSettings},
+		userConfig:        *user.Config,
 	}
 }
 
@@ -64,6 +71,7 @@ func (h *SettingsHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 			}
 
 		case "enter":
+			h.settingSelections[h.settingsCursor].SaveSettings(context)
 
 		case "up", "k":
 			if h.settingsCursor == 0 {
@@ -78,7 +86,15 @@ func (h *SettingsHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 			} else {
 				newCursor++
 			}
+
+		case "left", "h":
+			h.settingSelections[h.settingsCursor].MoveLeft()
+
+		case "right", "l":
+			h.settingSelections[h.settingsCursor].MoveRight()
+
 		}
+
 	}
 	h.settingsCursor = newCursor
 	return h, nil
@@ -106,15 +122,27 @@ func (h *SettingsHandler) Render(m *model) string {
 	return centeredText
 }
 
-func (t TimerSettings) render(style Styles) string {
-	selections := []string{formatSettingsDuration(t.timerSelection[t.timerCursor])}
-	selectionsStr := showSelections(selections, t.selectionCursor, style)
+func (t *TimerSettings) render(styles Styles) string {
+	var renderColor StringStyle
+	formattedDuration := formatSettingsDuration(t.timerSelection[t.selectionCursor])
+	if t.selectionCursor == t.timerCursor {
+		renderColor = styles.magenta
+	} else {
+		renderColor = styles.toEnter
+	}
+	selectionsStr := "[" + style(formattedDuration, renderColor) + "]"
 	return fmt.Sprintf("%s %s", "Timer", selectionsStr)
 }
 
-func (w WordsSettings) render(style Styles) string {
-	selections := []string{fmt.Sprintf("%d", w.wordsSelection[w.wordsCursor])}
-	selectionsStr := showSelections(selections, w.selectionCursor, style)
+func (w *WordsSettings) render(styles Styles) string {
+	var renderColor StringStyle
+	numberOfWords := fmt.Sprintf("%d", w.wordsSelection[w.selectionCursor])
+	if w.selectionCursor == w.wordsCursor {
+		renderColor = styles.magenta
+	} else {
+		renderColor = styles.toEnter
+	}
+	selectionsStr := "[" + style(numberOfWords, renderColor) + "]"
 	return fmt.Sprintf("%s %s", "Words", selectionsStr)
 }
 
@@ -127,19 +155,6 @@ func findTimerIndex(config *database.UserConfig, timerSelection []int) int {
 	return 0
 }
 
-func showSelections(selections []string, cursor int, styles Styles) string {
-	var selectionsStr string
-	for i, option := range selections {
-		if i+1 == cursor {
-			selectionsStr += "[" + style(option, styles.magenta) + "]"
-		} else {
-			selectionsStr += "[" + style(option, styles.toEnter) + "]"
-		}
-		selectionsStr += " "
-	}
-	return selectionsStr
-}
-
 func findWordsIndex(config *database.UserConfig, wordCountSelection []int) int {
 	for i, num := range wordCountSelection {
 		if num == config.Words {
@@ -147,6 +162,64 @@ func findWordsIndex(config *database.UserConfig, wordCountSelection []int) int {
 		}
 	}
 	return 0
+}
+
+func (t *TimerSettings) MoveLeft() {
+	if t.selectionCursor == 0 {
+		t.selectionCursor = len(t.timerSelection) - 1
+	} else {
+		t.selectionCursor--
+	}
+}
+
+func (t *TimerSettings) MoveRight() {
+	if t.selectionCursor == len(t.timerSelection)-1 {
+		t.selectionCursor = 0
+	} else {
+		t.selectionCursor++
+	}
+}
+
+func (w *WordsSettings) MoveLeft() {
+	if w.selectionCursor == 0 {
+		w.selectionCursor = len(w.wordsSelection) - 1
+	} else {
+		w.selectionCursor--
+	}
+}
+
+func (w *WordsSettings) MoveRight() {
+	if w.selectionCursor == len(w.wordsSelection)-1 {
+		w.selectionCursor = 0
+	} else {
+		w.selectionCursor++
+	}
+}
+
+func (t *TimerSettings) SaveSettings(context *StateContext) {
+	if t.selectionCursor != t.timerCursor {
+		t.timerCursor = t.selectionCursor
+	}
+	newUserConfig := context.model.session.User.Config
+	newUserConfig.Time = t.timerSelection[t.timerCursor]
+
+	database.UpdateUserConfigStandalone(
+		context.model.context.UserRepository,
+		context.model.session.User.Id,
+		UserConfigToMap(newUserConfig))
+}
+
+func (w *WordsSettings) SaveSettings(context *StateContext) {
+	if w.selectionCursor != w.wordsCursor {
+		w.wordsCursor = w.selectionCursor
+	}
+	newUserConfig := context.model.session.User.Config
+	newUserConfig.Words = w.wordsSelection[w.wordsCursor]
+
+	database.UpdateUserConfigStandalone(
+		context.model.context.UserRepository,
+		context.model.session.User.Id,
+		UserConfigToMap(newUserConfig))
 }
 
 func formatSettingsDuration(seconds int) string {

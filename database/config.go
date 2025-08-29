@@ -46,7 +46,7 @@ func UpdateUserConfig(tx *sql.Tx, userID int64, update map[string]interface{}) (
 	err := tx.QueryRow("SELECT config FROM user_config WHERE user_id = ?", userID).Scan(&currentConfig)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			merged = make(map[string]interface{})
+			merged = update
 		} else {
 			return nil, err
 		}
@@ -82,6 +82,25 @@ func UpdateUserConfig(tx *sql.Tx, userID int64, update map[string]interface{}) (
 	}
 
 	return &updatedConfig, nil
+}
+
+func UpdateUserConfigStandalone(db *sql.DB, userID int64, update map[string]interface{}) (*UserConfig, error) {
+	tx, err := db.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback()
+
+	config, err := UpdateUserConfig(tx, userID, update)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return config, nil
 }
 
 func validateConfig(cfg UserConfig) error {

@@ -138,7 +138,7 @@ func TestStateMachineHandleInput(t *testing.T) {
 	}
 
 	msg := tea.KeyMsg{Type: tea.KeyEnter}
-	model, cmd = sm.HandleInput(msg)
+	model, _ = sm.HandleInput(msg)
 	if model != m {
 		t.Error("should return the same model")
 	}

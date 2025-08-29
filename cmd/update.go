@@ -13,8 +13,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if msg.Width == 0 && msg.Height == 0 {
 			return m, nil
 		} else {
-			m.width = msg.Width
-			m.height = msg.Height
+			m.stateMachine.model.width = msg.Width
+			m.stateMachine.model.height = msg.Height
 			return m, nil
 		}
 	case tea.KeyMsg:

@@ -70,7 +70,7 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 
 		case "backspace":
 			handleBackspace(&h.base)
-			recordInput(msg, h)
+			recordInputBackspace(&h.base, h.stopwatch.stopwatch.Elapsed().Milliseconds())
 		case "ctrl+t":
 			// Delete entire word
 			handleCtrlBackspace(&h.base)
@@ -82,7 +82,7 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 					h.stopwatch.isRunning = true
 				}
 				handleCharacterInputFromMsg(msg, &h.base)
-				recordInput(msg, h)
+				recordInput(msg, &h.base, h.stopwatch.stopwatch.Elapsed().Milliseconds())
 			}
 		}
 	}

@@ -50,7 +50,7 @@ func (h *TimerTestHandler) HandleInput(msg tea.Msg, context *StateContext) (Stat
 		h.timer.timer = timerUpdate
 		commands = append(commands, cmdUpdate)
 
-		elapsedMinute := h.timer.duration.Minutes() - h.timer.timer.Timeout.Minutes()
+		elapsedMinute := h.timer.Elapsed().Minutes()
 		if elapsedMinute != 0 {
 			h.base.wpmEachSecond = append(h.base.wpmEachSecond, h.base.calculateNormalizedWpm(elapsedMinute))
 		}
@@ -71,6 +71,7 @@ func (h *TimerTestHandler) HandleInput(msg tea.Msg, context *StateContext) (Stat
 
 		case "backspace":
 			handleBackspace(&h.base)
+			recordInputBackspace(&h.base, h.timer.Elapsed().Milliseconds())
 		case "ctrl+t":
 			// Delete entire word
 			handleCtrlBackspace(&h.base)
@@ -82,11 +83,13 @@ func (h *TimerTestHandler) HandleInput(msg tea.Msg, context *StateContext) (Stat
 			switch msg.Type {
 			case tea.KeyRunes, tea.KeySpace:
 				if !h.timer.isRunning {
+					h.timer.startTime = time.Now()
 					commands = append(commands, h.timer.timer.Init())
 					h.timer.isRunning = true
 				}
 
 				handleCharacterInputFromMsg(msg, &h.base)
+				recordInput(msg, &h.base, h.timer.Elapsed().Milliseconds())
 			}
 		}
 	}
@@ -143,6 +146,7 @@ func (test TimerTestHandler) calculateResults(m *model) ResultsHandler {
 		rawWpm:        int(test.base.calculateRawWpm(elapsedMinutes)),
 		cpm:           test.base.calculateCpm(elapsedMinutes),
 		time:          test.timer.duration,
+		test:          test.base,
 		wpmEachSecond: test.base.wpmEachSecond,
 		mainMenu:      test.base.mainMenu,
 		resultsSelection: []string{

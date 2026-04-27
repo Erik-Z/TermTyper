@@ -41,10 +41,12 @@ type mistakes struct {
 }
 
 type Timer struct {
-	timer     timer.Model
-	duration  time.Duration
-	timedout  bool
-	isRunning bool
+	timer      timer.Model
+	duration   time.Duration
+	timedout   bool
+	isRunning  bool
+	startTime  time.Time
+	elapsed    time.Duration
 }
 
 type StopWatch struct {
@@ -60,4 +62,14 @@ type Styles struct {
 	cursor  StringStyle
 	toEnter StringStyle
 	magenta StringStyle
+}
+
+func (t *Timer) Elapsed() time.Duration {
+	if t.timedout {
+		return t.duration
+	}
+	if !t.isRunning {
+		return 0
+	}
+	return time.Since(t.startTime)
 }

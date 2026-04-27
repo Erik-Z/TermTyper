@@ -20,6 +20,8 @@ type ReplayHandler struct {
 }
 
 func NewReplayHandler(results ResultsHandler) *ReplayHandler {
+	results.test.inputBuffer = make([]rune, 0)
+	results.test.cursor = 0
 	return &ReplayHandler{
 		BaseStateHandler:  NewBaseStateHandler(StateReplay),
 		test:              results.test,
@@ -32,6 +34,7 @@ func NewReplayHandler(results ResultsHandler) *ReplayHandler {
 	}
 }
 
+// it doesn't end after time end of replay.
 func (h *ReplayHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHandler, tea.Cmd) {
 	var commands []tea.Cmd
 	switch msg := msg.(type) {
@@ -70,21 +73,19 @@ func (h *ReplayHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHa
 			}
 		}
 
-		if len(h.test.wordsToEnter) == len(h.test.inputBuffer) &&
-			!h.test.mistakes.mistakesAt[len(h.test.inputBuffer)-1] {
+		if len(h.test.testRecord) == 0 {
+			h.isReplayInProcess = false
 
 			commands = append(commands, h.stopwatch.stopwatch.Stop())
 			h.stopwatch.isRunning = false
 		}
 
-		// case tea.KeyMsg:
-		// 	switch msg.String() {
-		// 	case "esc":
-		// 		if h.ValidateTransition(StateResults, context) {
-		// 			//return NewResultsHandler(initResults(h.replay.results)), nil
-		// 		}
+		// if len(h.test.wordsToEnter) == len(h.test.inputBuffer) &&
+		// 	!h.test.mistakes.mistakesAt[len(h.test.inputBuffer)-1] {
 
-		// 	}
+		// 	commands = append(commands, h.stopwatch.stopwatch.Stop())
+		// 	h.stopwatch.isRunning = false
+		// }
 	}
 	return h, tea.Batch(commands...)
 }

@@ -118,19 +118,27 @@ func handleCharacterInputZenMode(msg tea.KeyMsg, base *TestBase) {
 	base.cursor = newCursorPosition
 }
 
-func recordInput(msg tea.KeyMsg, state *WordCountTestHandler) {
+func recordInput(msg tea.KeyMsg, base *TestBase, timestamp int64) {
 	var keyPress KeyPress
 	if msg.String() == "backspace" {
 		keyPress = KeyPress{
 			key:       '\b',
-			timestamp: state.stopwatch.stopwatch.Elapsed().Milliseconds(),
+			timestamp: timestamp,
 		}
 	} else {
 		keyPress = KeyPress{
 			key:       msg.Runes[len(msg.Runes)-1],
-			timestamp: state.stopwatch.stopwatch.Elapsed().Milliseconds(),
+			timestamp: timestamp,
 		}
 	}
 
-	state.base.testRecord = append(state.base.testRecord, keyPress)
+	base.testRecord = append(base.testRecord, keyPress)
+}
+
+func recordInputBackspace(base *TestBase, timestamp int64) {
+	keyPress := KeyPress{
+		key:       '\b',
+		timestamp: timestamp,
+	}
+	base.testRecord = append(base.testRecord, keyPress)
 }

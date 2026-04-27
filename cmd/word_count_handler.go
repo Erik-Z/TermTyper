@@ -54,7 +54,7 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 		h.stopwatch.stopwatch = stopwatchUpdate
 		commands = append(commands, cmdUpdate)
 
-		elapsedMinutes := h.stopwatch.stopwatch.Elapsed().Minutes()
+		elapsedMinutes := h.stopwatch.Elapsed().Minutes()
 		if elapsedMinutes != 0 {
 			h.base.wpmEachSecond = append(h.base.wpmEachSecond, h.base.calculateNormalizedWpm(elapsedMinutes))
 		}
@@ -70,7 +70,7 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 
 		case "backspace":
 			handleBackspace(&h.base)
-			recordInputBackspace(&h.base, h.stopwatch.stopwatch.Elapsed().Milliseconds())
+			recordInputBackspace(&h.base, h.stopwatch.Elapsed().Milliseconds())
 		case "ctrl+t":
 			// Delete entire word
 			handleCtrlBackspace(&h.base)
@@ -78,11 +78,12 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 			switch msg.Type {
 			case tea.KeyRunes, tea.KeySpace:
 				if !h.stopwatch.isRunning {
+					h.stopwatch.startTime = time.Now()
 					commands = append(commands, h.stopwatch.stopwatch.Init())
 					h.stopwatch.isRunning = true
 				}
 				handleCharacterInputFromMsg(msg, &h.base)
-				recordInput(msg, &h.base, h.stopwatch.stopwatch.Elapsed().Milliseconds())
+				recordInput(msg, &h.base, h.stopwatch.Elapsed().Milliseconds())
 			}
 		}
 	}
@@ -100,7 +101,7 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 func (h *WordCountTestHandler) Render(m *model) string {
 	termWidth, termHeight := m.width-2, m.height-2
 	s := ""
-	stopwatchViewSeconds := strconv.FormatFloat(h.stopwatch.stopwatch.Elapsed().Seconds(), 'f', 0, 64) + "s"
+	stopwatchViewSeconds := strconv.FormatFloat(h.stopwatch.Elapsed().Seconds(), 'f', 0, 64) + "s"
 	stopwatch := style(stopwatchViewSeconds, m.styles.magenta)
 	paragraphView := h.base.renderParagraph(lineLenLimit, m.styles)
 	lines := strings.Split(paragraphView, "\n")
@@ -130,7 +131,7 @@ func (h *WordCountTestHandler) ValidateTransition(to StateType, context *StateCo
 }
 
 func (test WordCountTestHandler) calculateResults(m *model) ResultsHandler {
-	elapsedMinutes := test.stopwatch.stopwatch.Elapsed().Minutes()
+	elapsedMinutes := test.stopwatch.Elapsed().Minutes()
 	wpm := test.base.calculateNormalizedWpm(elapsedMinutes)
 	wpmChart := NewWPMChartBubble(m.width/2, m.height/2)
 	wpmChart.UpdateData(test.base.wpmEachSecond)
@@ -141,7 +142,7 @@ func (test WordCountTestHandler) calculateResults(m *model) ResultsHandler {
 		accuracy:      test.base.calculateAccuracy(),
 		rawWpm:        int(test.base.calculateRawWpm(elapsedMinutes)),
 		cpm:           test.base.calculateCpm(elapsedMinutes),
-		time:          test.stopwatch.stopwatch.Elapsed(),
+		time:          test.stopwatch.Elapsed(),
 		test:          test.base,
 		wpmEachSecond: test.base.wpmEachSecond,
 		mainMenu:      test.base.mainMenu,

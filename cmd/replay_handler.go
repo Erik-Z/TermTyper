@@ -56,13 +56,14 @@ func (h *ReplayHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHa
 
 	if h.isReplayInProcess {
 		if !h.stopwatch.isRunning && len(h.test.testRecord) > 0 {
+			h.stopwatch.startTime = time.Now()
 			commands = append(commands, h.stopwatch.stopwatch.Init())
 			h.stopwatch.isRunning = true
 		}
 
 		if len(h.test.testRecord) > 0 {
 			currentKeyPress := h.test.testRecord[0]
-			if currentKeyPress.timestamp <= h.stopwatch.stopwatch.Elapsed().Milliseconds() {
+			if currentKeyPress.timestamp <= h.stopwatch.Elapsed().Milliseconds() {
 				switch currentKeyPress.key {
 				case '\b':
 					handleBackspace(&h.test)
@@ -94,7 +95,7 @@ func (h *ReplayHandler) Render(m *model) string {
 	termWidth, termHeight := m.width-2, m.height-2
 	s := ""
 
-	stopwatchViewSeconds := strconv.FormatFloat(h.stopwatch.stopwatch.Elapsed().Seconds(), 'f', 0, 64) + "s"
+	stopwatchViewSeconds := strconv.FormatFloat(h.stopwatch.Elapsed().Seconds(), 'f', 0, 64) + "s"
 	stopwatch := style(stopwatchViewSeconds, m.styles.magenta)
 	paragraphView := h.test.renderParagraph(lineLenLimit, m.styles)
 	lines := strings.Split(paragraphView, "\n")

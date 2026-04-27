@@ -50,8 +50,9 @@ type Timer struct {
 }
 
 type StopWatch struct {
-	stopwatch stopwatch.Model
+	stopwatch  stopwatch.Model
 	isRunning bool
+	startTime time.Time
 }
 
 type StringStyle func(string) termenv.Style
@@ -72,4 +73,11 @@ func (t *Timer) Elapsed() time.Duration {
 		return 0
 	}
 	return time.Since(t.startTime)
+}
+
+func (sw *StopWatch) Elapsed() time.Duration {
+	if !sw.isRunning {
+		return 0
+	}
+	return time.Since(sw.startTime)
 }

@@ -25,11 +25,11 @@ type WordList struct {
 }
 
 type WordGenerator struct {
-	Count         int
-	Punctuation   bool
-	poolsJson     map[string]WordList
-	currentPool   []string
-	poolIndex     int
+	Count       int
+	Punctuation bool
+	poolsJson   map[string]WordList
+	currentPool []string
+	poolIndex   int
 }
 
 func NewGenerator() WordGenerator {
@@ -43,13 +43,12 @@ func NewGenerator() WordGenerator {
 func (gen *WordGenerator) Generate(wordListName string) []rune {
 	pool := gen.poolsJson[wordListName].Words
 	rand.Shuffle(len(pool), func(i, j int) { pool[i], pool[j] = pool[j], pool[i] })
-	
-	// Calculate how many words we need (accounting for extra words in parentheses/quotes)
+
 	wordsNeeded := gen.Count
 	if gen.Punctuation {
-		wordsNeeded = int(float64(gen.Count) * 0.8) // Reduce to account for extra words
+		wordsNeeded = int(float64(gen.Count) * 0.8)
 	}
-	
+
 	amount := min(wordsNeeded, len(pool))
 	words := pool[0:amount]
 	gen.currentPool = pool

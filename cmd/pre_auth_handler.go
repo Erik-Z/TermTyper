@@ -29,7 +29,7 @@ func (h *PreAuthHandler) HandleInput(msg tea.Msg, context *StateContext) (StateH
 						Words: 30,
 					},
 				}
-				return NewMainMenuHandler(&guestUser), nil
+				return NewMainMenuHandler(&guestUser, context.model), nil
 			}
 			switch h.authMenu[newCursor].(type) {
 			case Login:

@@ -29,27 +29,35 @@ func createStyles(termProfile termenv.Profile, foregroundColor termenv.Color, th
 	}
 }
 
+func getTermProfile(m *model) termenv.Profile {
+	return m.termProfile
+}
+
+func getForegroundColor(m *model) termenv.Color {
+	return m.foregroundColor
+}
+
 func (m model) Init() tea.Cmd {
 	return nil
 }
 
 func initModel(termProfile termenv.Profile, foregroundColor termenv.Color, width, height int, sess *Session) model {
 	databaseContext := database.InitDB()
-	
-	// Get theme from user config, default to "Magenta" if not set
+
 	themeName := "Magenta"
 	if sess.User != nil && sess.User.Config != nil && sess.User.Config.Theme != "" {
 		themeName = sess.User.Config.Theme
 	}
 	themeColor := GetThemeColor(themeName)
-	
+
 	m := model{
-		//state:   initPreAuthentication(&databaseContext),
-		width:   width,
-		height:  height,
-		context: databaseContext,
-		session: sess,
-		styles:  createStyles(termProfile, foregroundColor, themeColor),
+		width:           width,
+		height:          height,
+		context:         databaseContext,
+		session:         sess,
+		termProfile:     termProfile,
+		foregroundColor: foregroundColor,
+		styles:          createStyles(termProfile, foregroundColor, themeColor),
 	}
 
 	// Initialize state machine with pre-authentication state

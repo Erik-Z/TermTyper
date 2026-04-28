@@ -42,7 +42,7 @@ func (h *ResultsHandler) HandleInput(msg tea.Msg, context *StateContext) (StateH
 		switch msg.String() {
 
 		case "esc":
-			return NewMainMenuHandler(context.model.session.User), nil
+			return NewMainMenuHandler(context.model.session.User, context.model), nil
 
 		case "enter":
 			if h.resultsSelection[newCursor] == "Next Test" {
@@ -52,7 +52,7 @@ func (h *ResultsHandler) HandleInput(msg tea.Msg, context *StateContext) (StateH
 					return NewWordCountTestHandler(h.mainMenu), nil
 				}
 			} else if h.resultsSelection[newCursor] == "Main Menu" {
-				return NewMainMenuHandler(context.model.session.User), nil
+				return NewMainMenuHandler(context.model.session.User, context.model), nil
 			} else if h.resultsSelection[newCursor] == "Replay" {
 				return NewReplayHandler(*h), nil
 			}

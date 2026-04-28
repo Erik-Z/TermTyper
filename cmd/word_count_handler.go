@@ -64,7 +64,7 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 		switch msg.String() {
 		case "esc":
 			if h.ValidateTransition(StateMainMenu, context) {
-				return NewMainMenuHandler(context.model.session.User), nil
+				return NewMainMenuHandler(context.model.session.User, context.model), nil
 			}
 		case "ctrl+r":
 			return NewWordCountTestHandler(h.base.mainMenu), nil

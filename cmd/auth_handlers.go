@@ -83,7 +83,7 @@ func (h *LoginHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHan
 		if err == nil && authUser != nil {
 			context.model.session.User = authUser
 			context.model.session.Authenticated = true
-			newState := NewMainMenuHandler(authUser)
+			newState := NewMainMenuHandler(authUser, context.model)
 			return newState, tea.Batch(commands...)
 		} else {
 			newLoginHandler := NewLoginHandler("❌" + err.Error())
@@ -214,7 +214,7 @@ func (h *RegisterHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 		}
 		context.model.session.User = newUser
 		context.model.session.Authenticated = true
-		MainMenuHandler := NewMainMenuHandler(newUser)
+		MainMenuHandler := NewMainMenuHandler(newUser, context.model)
 		return MainMenuHandler, tea.Batch(commands...)
 	}
 	return h, tea.Batch(commands...)

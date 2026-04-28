@@ -87,7 +87,7 @@ func (h *SettingsHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 		switch msg.String() {
 		case "esc":
 			if h.ValidateTransition(StateMainMenu, context) {
-				return NewMainMenuHandler(context.model.session.User), nil
+				return NewMainMenuHandler(context.model.session.User, context.model), nil
 			}
 
 		case "enter":

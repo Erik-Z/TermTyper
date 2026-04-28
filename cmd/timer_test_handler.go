@@ -67,7 +67,7 @@ func (h *TimerTestHandler) HandleInput(msg tea.Msg, context *StateContext) (Stat
 		switch msg.String() {
 		case "esc":
 			if h.ValidateTransition(StateMainMenu, context) {
-				return NewMainMenuHandler(context.model.session.User), nil
+				return NewMainMenuHandler(context.model.session.User, context.model), nil
 			}
 
 		case "backspace":
@@ -77,7 +77,7 @@ func (h *TimerTestHandler) HandleInput(msg tea.Msg, context *StateContext) (Stat
 			// Delete entire word
 			handleCtrlBackspace(&h.base)
 		case "ctrl+w":
-			return NewMainMenuHandler(context.model.session.User), nil
+			return NewMainMenuHandler(context.model.session.User, context.model), nil
 		case "ctrl+r":
 			return NewTimerTestHandler(h.base.mainMenu), nil
 		default:

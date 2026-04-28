@@ -10,11 +10,13 @@ import (
 )
 
 type model struct {
-	stateMachine  *StateMachine
-	styles        Styles
-	width, height int
-	context       database.Context
-	session       *Session
+	stateMachine    *StateMachine
+	styles          Styles
+	width, height   int
+	context         database.Context
+	session         *Session
+	termProfile     termenv.Profile
+	foregroundColor termenv.Color
 }
 
 type State interface{}

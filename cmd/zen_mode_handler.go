@@ -57,10 +57,10 @@ func (h *ZenModeHandler) HandleInput(msg tea.Msg, context *StateContext) (StateH
 		switch msg.String() {
 		case "esc":
 			if h.ValidateTransition(StateMainMenu, context) {
-				return NewMainMenuHandler(context.model.session.User), nil
+				return NewMainMenuHandler(context.model.session.User, context.model), nil
 			}
 		case "ctrl+w":
-			return NewMainMenuHandler(context.model.session.User), nil
+			return NewMainMenuHandler(context.model.session.User, context.model), nil
 		case "ctrl+r":
 			return NewZenModeHandler(h.base.mainMenu), nil
 		case "ctrl+backspace":

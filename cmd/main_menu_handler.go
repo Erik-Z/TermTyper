@@ -17,7 +17,15 @@ type MainMenuHandler struct {
 	currentUser            *database.ApplicationUser
 }
 
-func NewMainMenuHandler(user *database.ApplicationUser) *MainMenuHandler {
+func NewMainMenuHandler(user *database.ApplicationUser, m *model) *MainMenuHandler {
+	// Update model styles with user's theme preference
+	themeName := user.Config.Theme
+	if themeName == "" {
+		themeName = "Magenta"
+	}
+	themeColor := GetThemeColor(themeName)
+	m.styles = createStyles(m.termProfile, m.foregroundColor, themeColor)
+
 	timerGen := words.NewGenerator()
 	timerGen.Punctuation = user.Config.Punctuation
 

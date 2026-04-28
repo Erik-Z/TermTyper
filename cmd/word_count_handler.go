@@ -55,9 +55,12 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 		h.stopwatch.stopwatch = stopwatchUpdate
 		commands = append(commands, cmdUpdate)
 
-		elapsedMinutes := h.stopwatch.Elapsed().Minutes()
-		if elapsedMinutes != 0 {
-			h.base.wpmEachSecond = append(h.base.wpmEachSecond, h.base.calculateNormalizedWpm(elapsedMinutes))
+		elapsedSeconds := h.stopwatch.Elapsed().Seconds()
+		if int(elapsedSeconds) > len(h.base.wpmEachSecond) {
+			elapsedMinutes := elapsedSeconds / 60.0
+			if elapsedMinutes > 0 {
+				h.base.wpmEachSecond = append(h.base.wpmEachSecond, h.base.calculateNormalizedWpm(elapsedMinutes))
+			}
 		}
 
 	case tea.KeyPressMsg:

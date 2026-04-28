@@ -51,9 +51,12 @@ func (h *TimerTestHandler) HandleInput(msg tea.Msg, context *StateContext) (Stat
 		h.timer.timer = timerUpdate
 		commands = append(commands, cmdUpdate)
 
-		elapsedMinute := h.timer.Elapsed().Minutes()
-		if elapsedMinute != 0 {
-			h.base.wpmEachSecond = append(h.base.wpmEachSecond, h.base.calculateNormalizedWpm(elapsedMinute))
+		elapsedSeconds := h.timer.Elapsed().Seconds()
+		if int(elapsedSeconds) > len(h.base.wpmEachSecond) {
+			elapsedMinutes := elapsedSeconds / 60.0
+			if elapsedMinutes > 0 {
+				h.base.wpmEachSecond = append(h.base.wpmEachSecond, h.base.calculateNormalizedWpm(elapsedMinutes))
+			}
 		}
 
 		if h.timer.timer.Timedout() {

@@ -113,7 +113,9 @@ func (gen *WordGenerator) getNextPunctuation(currentIdx, totalWords int) []rune 
 }
 
 func (gen *WordGenerator) generateParenthesis() []rune {
-	words := []rune{'('}
+	var words []rune
+	words = append(words, ' ')
+	words = append(words, '(')
 	wordCount := rand.IntN(3) + 1
 	for i := 0; i < wordCount; i++ {
 		if i > 0 {
@@ -122,11 +124,14 @@ func (gen *WordGenerator) generateParenthesis() []rune {
 		words = append(words, []rune(gen.randomWord())...)
 	}
 	words = append(words, ')')
-	return append(words, ' ')
+	words = append(words, ' ')
+	return words
 }
 
 func (gen *WordGenerator) generateQuotedPhrase() []rune {
-	words := []rune{'"'}
+	var words []rune
+	words = append(words, ' ')
+	words = append(words, '"')
 	wordCount := rand.IntN(4) + 1
 	for i := 0; i < wordCount; i++ {
 		if i > 0 {
@@ -135,7 +140,8 @@ func (gen *WordGenerator) generateQuotedPhrase() []rune {
 		words = append(words, []rune(gen.randomWord())...)
 	}
 	words = append(words, '"')
-	return append(words, ' ')
+	words = append(words, ' ')
+	return words
 }
 
 func (gen *WordGenerator) randomWord() string {

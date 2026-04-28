@@ -16,10 +16,10 @@ func TestGenerateWithPunctuation(t *testing.T) {
 		t.Error("Generated runes should not be empty")
 	}
 
-	// Convert to string for easier checking
 	resultStr := string(result)
 
-	// Check that there are some punctuation marks
+	t.Logf("Generated text: %s", resultStr)
+
 	hasPunctuation := false
 	for _, r := range result {
 		if strings.ContainsRune(".,!?;()\"", r) {
@@ -43,6 +43,30 @@ func TestGenerateWithPunctuation(t *testing.T) {
 	quotes := strings.Count(resultStr, "\"")
 	if quotes%2 != 0 {
 		t.Errorf("Unbalanced quotes: %d quotes (should be even)", quotes)
+	}
+
+	// Check that parentheses and quotes have proper spacing
+	// There should be a space before opening ( and "
+	runes := []rune(resultStr)
+	insideQuotes := false
+	for i, r := range runes {
+		if r == '"' {
+			if insideQuotes {
+				insideQuotes = false
+			} else {
+				// Opening quote - should have space before it
+				if i > 0 && runes[i-1] != ' ' && runes[i-1] != '(' && runes[i-1] != ')' {
+					t.Errorf("Missing space before opening quote at position %d: ...%s...", i, resultStr[max(0, i-10):min(len(resultStr), i+10)])
+				}
+				insideQuotes = true
+			}
+		}
+		if r == '(' {
+			// Opening parenthesis - should have space before it
+			if i > 0 && runes[i-1] != ' ' && runes[i-1] != '"' {
+				t.Errorf("Missing space before '(' at position %d: ...%s...", i, resultStr[max(0, i-10):min(len(resultStr), i+10)])
+			}
+		}
 	}
 }
 

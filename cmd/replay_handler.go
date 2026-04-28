@@ -17,6 +17,9 @@ type ReplayHandler struct {
 	results           ResultsHandler
 	stopwatch         StopWatch
 	isReplayInProcess bool
+	replayDone        bool
+	replaySelection   []string
+	replayCursor      int
 }
 
 func NewReplayHandler(results ResultsHandler) *ReplayHandler {
@@ -27,6 +30,9 @@ func NewReplayHandler(results ResultsHandler) *ReplayHandler {
 		test:              results.test,
 		results:           results,
 		isReplayInProcess: false,
+		replayDone:        false,
+		replaySelection:   []string{"New Test", "Main Menu", "Replay"},
+		replayCursor:      0,
 		stopwatch: StopWatch{
 			stopwatch: stopwatch.NewWithInterval(time.Millisecond),
 			isRunning: false,
@@ -34,9 +40,41 @@ func NewReplayHandler(results ResultsHandler) *ReplayHandler {
 	}
 }
 
-// it doesn't end after time end of replay.
 func (h *ReplayHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHandler, tea.Cmd) {
 	var commands []tea.Cmd
+
+	if h.replayDone {
+		switch msg := msg.(type) {
+		case tea.KeyMsg:
+			switch msg.String() {
+			case "enter":
+				switch h.replaySelection[h.replayCursor] {
+				case "Replay":
+					return NewReplayHandler(h.results), nil
+				case "New Test":
+					return NewWordCountTestHandler(h.results.mainMenu), nil
+				case "Main Menu":
+					return NewMainMenuHandler(context.model.session.User, context.model), nil
+				}
+			case "left", "h":
+				if h.replayCursor == 0 {
+					h.replayCursor = len(h.replaySelection) - 1
+				} else {
+					h.replayCursor--
+				}
+			case "right", "l":
+				if h.replayCursor == len(h.replaySelection)-1 {
+					h.replayCursor = 0
+				} else {
+					h.replayCursor++
+				}
+			case "esc":
+				return NewMainMenuHandler(context.model.session.User, context.model), nil
+			}
+		}
+		return h, nil
+	}
+
 	switch msg := msg.(type) {
 	case stopwatch.StartStopMsg:
 		stopwatchUpdate, cmdUpdate := h.stopwatch.stopwatch.Update(msg)
@@ -76,17 +114,11 @@ func (h *ReplayHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHa
 
 		if len(h.test.testRecord) == 0 {
 			h.isReplayInProcess = false
+			h.replayDone = true
 
 			commands = append(commands, h.stopwatch.stopwatch.Stop())
 			h.stopwatch.isRunning = false
 		}
-
-		// if len(h.test.wordsToEnter) == len(h.test.inputBuffer) &&
-		// 	!h.test.mistakes.mistakesAt[len(h.test.inputBuffer)-1] {
-
-		// 	commands = append(commands, h.stopwatch.stopwatch.Stop())
-		// 	h.stopwatch.isRunning = false
-		// }
 	}
 	return h, tea.Batch(commands...)
 }
@@ -112,6 +144,16 @@ func (h *ReplayHandler) Render(m *model) string {
 
 	if h.isReplayInProcess {
 		s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("Replay in progress..", m.styles.toEnter))
+	} else if h.replayDone {
+		var menuItems []string
+		for i, choice := range h.replaySelection {
+			choiceShow := style(choice, m.styles.toEnter)
+			if i == h.replayCursor {
+				choiceShow = style(choice, m.styles.themeFunc)
+			}
+			menuItems = append(menuItems, choiceShow)
+		}
+		s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, strings.Join(menuItems, " | "))
 	} else {
 		s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("Press any key to start Replay", m.styles.toEnter))
 	}

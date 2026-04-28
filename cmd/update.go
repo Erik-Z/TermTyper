@@ -71,11 +71,11 @@ func handleCtrlBackspace(base *TestBase) {
 }
 
 func handleCharacterInputFromMsg(msg tea.KeyMsg, base *TestBase) {
-	// Prevent pasting - only allow single character input
+	// TODO: Fix this. Doesn't work, I can still paste into input buffer.
 	if len(msg.Runes) > 1 {
 		return
 	}
-	
+
 	if len(base.inputBuffer) == len(base.wordsToEnter) {
 		return
 	}

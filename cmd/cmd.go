@@ -22,6 +22,16 @@ import (
 	"golang.org/x/term"
 )
 
+// TODO: add "unsaved settings. Do you want to save before returning to main menu"
+// TODO: Gamify the software. Add levels, achievements, stats, etc.
+// TODO: Add a daily/weekly challenge with a global leaderboard. Maybe also add a local leaderboard for each user.
+// TODO: Add user levels. The leveling system should be similar to monkeytype, where you level up by earning experience points from typing.
+// TODO: Keep track of user test history. Allow users to view their past test result stats.
+// TODO: Use the test history to show users their progress over time. Maybe add some basic analytics, like average WPM over the past x number of tests.
+// TODO: Limit the test history to 1000 tests.
+// TODO: Keep track of time spent in the app, and show it to the user in their profile.
+// TODO: Add a really good readme.md with screenshots, gifs, and maybe even a demo video. The readme should also include instructions on how to use the software.
+
 var (
 	host           = "localhost"
 	port           = 22222

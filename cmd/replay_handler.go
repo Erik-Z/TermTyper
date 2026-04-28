@@ -145,6 +145,7 @@ func (h *ReplayHandler) Render(m *model) string {
 	if h.isReplayInProcess {
 		s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("Replay in progress..", m.styles.toEnter))
 	} else if h.replayDone {
+		// TODO: replay menu is inconsistent with other menus, needs to be fixed
 		var menuItems []string
 		for i, choice := range h.replaySelection {
 			choiceShow := style(choice, m.styles.toEnter)

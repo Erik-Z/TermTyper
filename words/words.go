@@ -25,10 +25,11 @@ type WordList struct {
 }
 
 type WordGenerator struct {
-	Count       int
-	Punctuation bool
-	poolsJson   map[string]WordList
-	currentPool []string
+	Count         int
+	Punctuation   bool
+	poolsJson     map[string]WordList
+	currentPool   []string
+	poolIndex     int
 }
 
 func NewGenerator() WordGenerator {
@@ -42,10 +43,17 @@ func NewGenerator() WordGenerator {
 func (gen *WordGenerator) Generate(wordListName string) []rune {
 	pool := gen.poolsJson[wordListName].Words
 	rand.Shuffle(len(pool), func(i, j int) { pool[i], pool[j] = pool[j], pool[i] })
-	amount := min(gen.Count, len(pool))
+	
+	// Calculate how many words we need (accounting for extra words in parentheses/quotes)
+	wordsNeeded := gen.Count
+	if gen.Punctuation {
+		wordsNeeded = int(float64(gen.Count) * 0.8) // Reduce to account for extra words
+	}
+	
+	amount := min(wordsNeeded, len(pool))
 	words := pool[0:amount]
-
 	gen.currentPool = pool
+	gen.poolIndex = amount
 
 	if !gen.Punctuation {
 		return []rune(strings.Join(words, " "))
@@ -145,10 +153,14 @@ func (gen *WordGenerator) generateQuotedPhrase() []rune {
 }
 
 func (gen *WordGenerator) randomWord() string {
-	if len(gen.currentPool) == 0 {
-		return "the"
+	if gen.poolIndex >= len(gen.currentPool) {
+		// Reset if we've used all words
+		rand.Shuffle(len(gen.currentPool), func(i, j int) { gen.currentPool[i], gen.currentPool[j] = gen.currentPool[j], gen.currentPool[i] })
+		gen.poolIndex = 0
 	}
-	return gen.currentPool[rand.IntN(len(gen.currentPool))]
+	word := gen.currentPool[gen.poolIndex]
+	gen.poolIndex++
+	return word
 }
 
 func containsEndPunct(r []rune) bool {

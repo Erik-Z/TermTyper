@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/golang-migrate/migrate/v4"
@@ -28,6 +29,10 @@ type ApplicationUser struct {
 }
 
 func initUserDB() (*sql.DB, error) {
+	if err := os.MkdirAll("./data", 0755); err != nil {
+		return nil, fmt.Errorf("failed to create data directory: %w", err)
+	}
+
 	db, err := sql.Open("sqlite", "./data/users.db?_foreign_keys=on")
 	db.SetMaxOpenConns(1)
 	if err != nil {

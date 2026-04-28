@@ -36,6 +36,11 @@ type WordsSettings struct {
 	selectionCursor int
 }
 
+type PunctuationSettings struct {
+	enabled    bool
+	savedValue bool
+}
+
 func NewSettingsHandler(user *database.ApplicationUser) *SettingsHandler {
 	wordCountSelection := []int{15, 30, 45, 60}
 	timerSelection := []int{15, 30, 60, 120}
@@ -52,10 +57,15 @@ func NewSettingsHandler(user *database.ApplicationUser) *SettingsHandler {
 		selectionCursor: findTimerIndex(user.Config, wordCountSelection),
 	}
 
+	punctuationSettings := PunctuationSettings{
+		enabled:    user.Config.Punctuation,
+		savedValue: user.Config.Punctuation,
+	}
+
 	return &SettingsHandler{
 		BaseStateHandler:  NewBaseStateHandler(StateSettings),
 		settingsCursor:    0,
-		settingSelections: []TestSetting{&timerSettings, &wordsSettings},
+		settingSelections: []TestSetting{&timerSettings, &wordsSettings, &punctuationSettings},
 		userConfig:        *user.Config,
 	}
 }
@@ -180,6 +190,19 @@ func (t *TimerSettings) MoveRight() {
 	}
 }
 
+func (t *TimerSettings) SaveSettings(context *StateContext) {
+	if t.selectionCursor != t.timerCursor {
+		t.timerCursor = t.selectionCursor
+	}
+	newUserConfig := context.model.session.User.Config
+	newUserConfig.Time = t.timerSelection[t.timerCursor]
+
+	database.UpdateUserConfigStandalone(
+		context.model.context.UserRepository,
+		context.model.session.User.Id,
+		UserConfigToMap(newUserConfig))
+}
+
 func (w *WordsSettings) MoveLeft() {
 	if w.selectionCursor == 0 {
 		w.selectionCursor = len(w.wordsSelection) - 1
@@ -196,12 +219,12 @@ func (w *WordsSettings) MoveRight() {
 	}
 }
 
-func (t *TimerSettings) SaveSettings(context *StateContext) {
-	if t.selectionCursor != t.timerCursor {
-		t.timerCursor = t.selectionCursor
+func (w *WordsSettings) SaveSettings(context *StateContext) {
+	if w.selectionCursor != w.wordsCursor {
+		w.wordsCursor = w.selectionCursor
 	}
 	newUserConfig := context.model.session.User.Config
-	newUserConfig.Time = t.timerSelection[t.timerCursor]
+	newUserConfig.Words = w.wordsSelection[w.wordsCursor]
 
 	database.UpdateUserConfigStandalone(
 		context.model.context.UserRepository,
@@ -209,12 +232,30 @@ func (t *TimerSettings) SaveSettings(context *StateContext) {
 		UserConfigToMap(newUserConfig))
 }
 
-func (w *WordsSettings) SaveSettings(context *StateContext) {
-	if w.selectionCursor != w.wordsCursor {
-		w.wordsCursor = w.selectionCursor
+func (p *PunctuationSettings) render(styles Styles) string {
+	var renderColor StringStyle
+	status := p.enabled
+	if p.savedValue == p.enabled {
+		renderColor = styles.magenta
+	} else {
+		renderColor = styles.toEnter
 	}
+	selectionsStr := "[" + style(fmt.Sprintf("%t", status), renderColor) + "]"
+	return fmt.Sprintf("%s %s", "Punctuation", selectionsStr)
+}
+
+func (p *PunctuationSettings) MoveLeft() {
+	p.enabled = false
+}
+
+func (p *PunctuationSettings) MoveRight() {
+	p.enabled = true
+}
+
+func (p *PunctuationSettings) SaveSettings(context *StateContext) {
+	p.savedValue = p.enabled
 	newUserConfig := context.model.session.User.Config
-	newUserConfig.Words = w.wordsSelection[w.wordsCursor]
+	newUserConfig.Punctuation = p.enabled
 
 	database.UpdateUserConfigStandalone(
 		context.model.context.UserRepository,

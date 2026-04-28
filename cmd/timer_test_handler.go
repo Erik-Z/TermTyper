@@ -19,6 +19,7 @@ type TimerTestHandler struct {
 
 func NewTimerTestHandler(menu MainMenuHandler) *TimerTestHandler {
 	testDuration := time.Duration(menu.currentUser.Config.Time) * time.Second
+	menu.timerTestWordGenerator.Punctuation = menu.currentUser.Config.Punctuation
 	return &TimerTestHandler{
 		BaseStateHandler: NewBaseStateHandler(StateTimerTest),
 		timer: Timer{

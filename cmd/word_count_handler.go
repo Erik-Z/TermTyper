@@ -20,6 +20,7 @@ type WordCountTestHandler struct {
 
 func NewWordCountTestHandler(menu MainMenuHandler) *WordCountTestHandler {
 	menu.wordTestWordGenerator.Count = menu.currentUser.Config.Words
+	menu.wordTestWordGenerator.Punctuation = menu.currentUser.Config.Punctuation
 	return &WordCountTestHandler{
 		BaseStateHandler: NewBaseStateHandler(StateWordCountTest),
 		stopwatch: StopWatch{

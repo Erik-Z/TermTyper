@@ -66,6 +66,7 @@ func MapToUserConfig(m map[string]interface{}) (*database.UserConfig, error) {
 
 	config.Time = 30
 	config.Words = 30
+	config.Punctuation = false
 
 	if val, exists := m["time"]; exists {
 		timeVal, err := convertToInt(val)
@@ -83,6 +84,12 @@ func MapToUserConfig(m map[string]interface{}) (*database.UserConfig, error) {
 		config.Words = wordsVal
 	}
 
+	if val, exists := m["punctuation"]; exists {
+		if boolVal, ok := val.(bool); ok {
+			config.Punctuation = boolVal
+		}
+	}
+
 	if val, exists := m["custom_settings"]; exists {
 		if customMap, ok := val.(map[string]interface{}); ok {
 			config.CustomSettings = customMap
@@ -92,7 +99,7 @@ func MapToUserConfig(m map[string]interface{}) (*database.UserConfig, error) {
 	}
 
 	for key, val := range m {
-		if key != "time" && key != "words" && key != "custom_settings" {
+		if key != "time" && key != "words" && key != "punctuation" && key != "custom_settings" {
 			config.CustomSettings[key] = val
 		}
 	}
@@ -105,6 +112,7 @@ func UserConfigToMap(config *database.UserConfig) map[string]interface{} {
 
 	result["time"] = config.Time
 	result["words"] = config.Words
+	result["punctuation"] = config.Punctuation
 
 	if config.CustomSettings != nil {
 		result["custom_settings"] = config.CustomSettings

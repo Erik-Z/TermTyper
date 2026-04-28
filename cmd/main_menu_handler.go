@@ -18,6 +18,12 @@ type MainMenuHandler struct {
 }
 
 func NewMainMenuHandler(user *database.ApplicationUser) *MainMenuHandler {
+	timerGen := words.NewGenerator()
+	timerGen.Punctuation = user.Config.Punctuation
+
+	wordGen := words.NewGenerator()
+	wordGen.Punctuation = user.Config.Punctuation
+
 	return &MainMenuHandler{
 		BaseStateHandler: NewBaseStateHandler(StateMainMenu),
 		MainMenuSelection: []string{
@@ -28,8 +34,8 @@ func NewMainMenuHandler(user *database.ApplicationUser) *MainMenuHandler {
 		},
 		currentUser:            user,
 		cursor:                 0,
-		timerTestWordGenerator: words.NewGenerator(),
-		wordTestWordGenerator:  words.NewGenerator(),
+		timerTestWordGenerator: timerGen,
+		wordTestWordGenerator:  wordGen,
 	}
 }
 

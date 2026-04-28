@@ -54,7 +54,7 @@ func NewSettingsHandler(user *database.ApplicationUser) *SettingsHandler {
 	wordsSettings := WordsSettings{
 		wordsSelection:  wordCountSelection,
 		wordsCursor:     findWordsIndex(user.Config, wordCountSelection),
-		selectionCursor: findTimerIndex(user.Config, wordCountSelection),
+		selectionCursor: findWordsIndex(user.Config, wordCountSelection),
 	}
 
 	punctuationSettings := PunctuationSettings{

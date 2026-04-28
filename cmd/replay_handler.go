@@ -96,7 +96,7 @@ func (h *ReplayHandler) Render(m *model) string {
 	s := ""
 
 	stopwatchViewSeconds := strconv.FormatFloat(h.stopwatch.Elapsed().Seconds(), 'f', 0, 64) + "s"
-	stopwatch := style(stopwatchViewSeconds, m.styles.magenta)
+	stopwatch := style(stopwatchViewSeconds, m.styles.themeFunc)
 	paragraphView := h.test.renderParagraph(lineLenLimit, m.styles)
 	lines := strings.Split(paragraphView, "\n")
 	cursorLine := findCursorLine(strings.Split(paragraphView, "\n"), h.test.cursor)

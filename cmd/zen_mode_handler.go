@@ -86,7 +86,7 @@ func (h *ZenModeHandler) Render(m *model) string {
 	s := ""
 	termWidth, termHeight := m.width-2, m.height-2
 
-	stopwatch := style(h.stopwatch.stopwatch.View(), m.styles.magenta)
+	stopwatch := style(h.stopwatch.stopwatch.View(), m.styles.themeFunc)
 	paragraphView := h.base.renderParagraphZenMode(lineLenLimit, m.styles)
 	lines := strings.Split(paragraphView, "\n")
 

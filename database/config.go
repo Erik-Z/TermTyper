@@ -16,9 +16,10 @@ var (
 )
 
 type UserConfig struct {
-	Time        int  `json:"time" default:"30" validate:"min=1,max=1440"`
-	Words       int  `json:"words" default:"30" validate:"min=1,max=500"`
-	Punctuation bool `json:"punctuation" default:"false"`
+	Time        int    `json:"time" default:"30" validate:"min=1,max=1440"`
+	Words       int    `json:"words" default:"30" validate:"min=1,max=500"`
+	Punctuation bool   `json:"punctuation" default:"false"`
+	Theme       string `json:"theme" default:"magenta"`
 
 	CustomSettings map[string]interface{} `json:"custom_settings"`
 }

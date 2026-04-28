@@ -97,7 +97,7 @@ func (h *LoginHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHan
 
 func (h *LoginHandler) Render(m *model) string {
 	termWidth, termHeight := m.width-2, m.height-2
-	login := style("Login"+" "+h.errorMessage, m.styles.magenta)
+	login := style("Login"+" "+h.errorMessage, m.styles.themeFunc)
 	login = lipgloss.NewStyle().PaddingBottom(1).Render(login)
 
 	joined := lipgloss.JoinVertical(lipgloss.Left, []string{login, h.form.View()}...)
@@ -222,7 +222,7 @@ func (h *RegisterHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 
 func (h *RegisterHandler) Render(m *model) string {
 	termWidth, termHeight := m.width-2, m.height-2
-	register := style("Register"+" "+h.errorMessage, m.styles.magenta)
+	register := style("Register"+" "+h.errorMessage, m.styles.themeFunc)
 	register = lipgloss.NewStyle().PaddingBottom(1).Render(register)
 
 	joined := lipgloss.JoinVertical(lipgloss.Center, []string{register, h.form.View()}...)

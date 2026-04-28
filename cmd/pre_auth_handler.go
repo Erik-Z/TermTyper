@@ -65,7 +65,7 @@ func (h *PreAuthHandler) HandleInput(msg tea.Msg, context *StateContext) (StateH
 
 func (h *PreAuthHandler) Render(m *model) string {
 	termWidth, termHeight := m.width-2, m.height-2
-	termtyper := style("TermTyper", m.styles.magenta)
+	termtyper := style("TermTyper", m.styles.themeFunc)
 	termtyper = lipgloss.NewStyle().PaddingBottom(1).Render(termtyper)
 
 	var authMenu []string

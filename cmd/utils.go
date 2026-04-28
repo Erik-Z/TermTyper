@@ -113,6 +113,7 @@ func UserConfigToMap(config *database.UserConfig) map[string]interface{} {
 	result["time"] = config.Time
 	result["words"] = config.Words
 	result["punctuation"] = config.Punctuation
+	result["theme"] = config.Theme
 
 	if config.CustomSettings != nil {
 		result["custom_settings"] = config.CustomSettings

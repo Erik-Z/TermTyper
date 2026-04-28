@@ -103,7 +103,7 @@ func (h *WordCountTestHandler) Render(m *model) string {
 	termWidth, termHeight := m.width-2, m.height-2
 	s := ""
 	stopwatchViewSeconds := strconv.FormatFloat(h.stopwatch.Elapsed().Seconds(), 'f', 0, 64) + "s"
-	stopwatch := style(stopwatchViewSeconds, m.styles.magenta)
+	stopwatch := style(stopwatchViewSeconds, m.styles.themeFunc)
 	paragraphView := h.base.renderParagraph(lineLenLimit, m.styles)
 	lines := strings.Split(paragraphView, "\n")
 	cursorLine := findCursorLine(strings.Split(paragraphView, "\n"), h.base.cursor)

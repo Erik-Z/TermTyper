@@ -101,7 +101,7 @@ func (h *TimerTestHandler) HandleInput(msg tea.Msg, context *StateContext) (Stat
 func (h *TimerTestHandler) Render(m *model) string {
 	termWidth, termHeight := m.width-2, m.height-2
 
-	timer := style(h.timer.timer.View(), m.styles.magenta)
+	timer := style(h.timer.timer.View(), m.styles.themeFunc)
 	s := ""
 
 	paragraph := h.base.renderParagraph(lineLenLimit, m.styles)

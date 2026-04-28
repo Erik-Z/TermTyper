@@ -58,11 +58,11 @@ type StopWatch struct {
 type StringStyle func(string) termenv.Style
 
 type Styles struct {
-	correct StringStyle
-	mistake StringStyle
-	cursor  StringStyle
-	toEnter StringStyle
-	magenta StringStyle
+	correct  StringStyle
+	mistake  StringStyle
+	cursor   StringStyle
+	toEnter  StringStyle
+	themeFunc StringStyle
 }
 
 func (t *Timer) Elapsed() time.Duration {

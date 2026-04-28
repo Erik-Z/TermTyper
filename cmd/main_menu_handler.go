@@ -81,7 +81,7 @@ func (h *MainMenuHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 
 func (h *MainMenuHandler) Render(m *model) string {
 	termWidth, termHeight := m.width-2, m.height-2
-	termtyper := style("TermTyper - Welcome "+m.session.User.Username, m.styles.magenta)
+	termtyper := style("TermTyper - Welcome "+m.session.User.Username, m.styles.themeFunc)
 	termtyper = lipgloss.NewStyle().PaddingBottom(1).Render(termtyper)
 
 	var menuItems []string

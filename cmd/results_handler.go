@@ -79,7 +79,7 @@ func (h *ResultsHandler) HandleInput(msg tea.Msg, context *StateContext) (StateH
 func (h *ResultsHandler) Render(m *model) string {
 	termWidth, termHeight := m.width-2, m.height-2
 
-	title := style("Test Results", m.styles.magenta)
+	title := style("Test Results", m.styles.themeFunc)
 	title = lipgloss.NewStyle().PaddingBottom(1).Render(title)
 
 	var content []string

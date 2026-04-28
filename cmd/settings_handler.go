@@ -41,6 +41,11 @@ type PunctuationSettings struct {
 	savedValue bool
 }
 
+type ThemeSettings struct {
+	themeIndex  int
+	savedIndex  int
+}
+
 func NewSettingsHandler(user *database.ApplicationUser) *SettingsHandler {
 	wordCountSelection := []int{15, 30, 45, 60}
 	timerSelection := []int{15, 30, 60, 120}
@@ -62,10 +67,15 @@ func NewSettingsHandler(user *database.ApplicationUser) *SettingsHandler {
 		savedValue: user.Config.Punctuation,
 	}
 
+	themeSettings := ThemeSettings{
+		themeIndex: GetThemeIndex(user.Config.Theme),
+		savedIndex: GetThemeIndex(user.Config.Theme),
+	}
+
 	return &SettingsHandler{
 		BaseStateHandler:  NewBaseStateHandler(StateSettings),
 		settingsCursor:    0,
-		settingSelections: []TestSetting{&timerSettings, &wordsSettings, &punctuationSettings},
+		settingSelections: []TestSetting{&timerSettings, &wordsSettings, &punctuationSettings, &themeSettings},
 		userConfig:        *user.Config,
 	}
 }
@@ -112,7 +122,7 @@ func (h *SettingsHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 
 func (h *SettingsHandler) Render(m *model) string {
 	termWidth, termHeight := m.width-2, m.height-2
-	settings := style("Settings", m.styles.magenta)
+	settings := style("Settings", m.styles.themeFunc)
 	settings = lipgloss.NewStyle().PaddingBottom(1).Render(settings)
 
 	menuItemsStyle := lipgloss.NewStyle().PaddingTop(1)
@@ -136,7 +146,7 @@ func (t *TimerSettings) render(styles Styles) string {
 	var renderColor StringStyle
 	formattedDuration := formatSettingsDuration(t.timerSelection[t.selectionCursor])
 	if t.selectionCursor == t.timerCursor {
-		renderColor = styles.magenta
+		renderColor = styles.themeFunc
 	} else {
 		renderColor = styles.toEnter
 	}
@@ -148,7 +158,7 @@ func (w *WordsSettings) render(styles Styles) string {
 	var renderColor StringStyle
 	numberOfWords := fmt.Sprintf("%d", w.wordsSelection[w.selectionCursor])
 	if w.selectionCursor == w.wordsCursor {
-		renderColor = styles.magenta
+		renderColor = styles.themeFunc
 	} else {
 		renderColor = styles.toEnter
 	}
@@ -236,7 +246,7 @@ func (p *PunctuationSettings) render(styles Styles) string {
 	var renderColor StringStyle
 	status := p.enabled
 	if p.savedValue == p.enabled {
-		renderColor = styles.magenta
+		renderColor = styles.themeFunc
 	} else {
 		renderColor = styles.toEnter
 	}
@@ -256,6 +266,45 @@ func (p *PunctuationSettings) SaveSettings(context *StateContext) {
 	p.savedValue = p.enabled
 	newUserConfig := context.model.session.User.Config
 	newUserConfig.Punctuation = p.enabled
+
+	database.UpdateUserConfigStandalone(
+		context.model.context.UserRepository,
+		context.model.session.User.Id,
+		UserConfigToMap(newUserConfig))
+}
+
+func (t *ThemeSettings) render(styles Styles) string {
+	var renderColor StringStyle
+	if t.themeIndex == t.savedIndex {
+		renderColor = styles.themeFunc
+	} else {
+		renderColor = styles.toEnter
+	}
+	themeName := AvailableThemes[t.themeIndex].Name
+	selectionsStr := "[" + style(themeName, renderColor) + "]"
+	return fmt.Sprintf("%s %s", "Theme", selectionsStr)
+}
+
+func (t *ThemeSettings) MoveLeft() {
+	if t.themeIndex == 0 {
+		t.themeIndex = len(AvailableThemes) - 1
+	} else {
+		t.themeIndex--
+	}
+}
+
+func (t *ThemeSettings) MoveRight() {
+	if t.themeIndex == len(AvailableThemes)-1 {
+		t.themeIndex = 0
+	} else {
+		t.themeIndex++
+	}
+}
+
+func (t *ThemeSettings) SaveSettings(context *StateContext) {
+	t.savedIndex = t.themeIndex
+	newUserConfig := context.model.session.User.Config
+	newUserConfig.Theme = AvailableThemes[t.themeIndex].Name
 
 	database.UpdateUserConfigStandalone(
 		context.model.context.UserRepository,

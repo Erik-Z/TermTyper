@@ -52,7 +52,13 @@ func (h *ReplayHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHa
 				case "Replay":
 					return NewReplayHandler(h.results), nil
 				case "New Test":
-					return NewWordCountTestHandler(h.results.mainMenu), nil
+					switch h.results.testType {
+					case "timer":
+						return NewTimerTestHandler(h.results.mainMenu), nil
+					case "wordcount":
+						return NewWordCountTestHandler(h.results.mainMenu), nil
+					}
+
 				case "Main Menu":
 					return NewMainMenuHandler(context.model.session.User, context.model), nil
 				}
@@ -145,13 +151,10 @@ func (h *ReplayHandler) Render(m *model) string {
 	if h.isReplayInProcess {
 		s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("Replay in progress..", m.styles.toEnter))
 	} else if h.replayDone {
-		// TODO: replay menu is inconsistent with other menus, needs to be fixed
 		var menuItems []string
 		for i, choice := range h.replaySelection {
 			choiceShow := style(choice, m.styles.toEnter)
-			if i == h.replayCursor {
-				choiceShow = style(choice, m.styles.themeFunc)
-			}
+			choiceShow = wrapWithCursor(h.replayCursor == i, choiceShow, m.styles.toEnter)
 			menuItems = append(menuItems, choiceShow)
 		}
 		s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, strings.Join(menuItems, " | "))

@@ -98,7 +98,6 @@ func (h *ZenModeHandler) Render(m *model) string {
 	if !h.stopwatch.isRunning {
 		s += "\n\n\n"
 		s += style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter)
-		//s += lipgloss.PlaceHorizontal(termWidth, lipgloss.Center, style("ctrl+r to restart, ctrl+q to menu", m.styles.toEnter))
 	}
 	centeredText := lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center+lipgloss.Position(termHeight/2), s)
 

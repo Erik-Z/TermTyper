@@ -45,7 +45,6 @@ func (wc *WPMChartBubble) View() string {
 	title := wc.style.Copy().Bold(true).Render("WPM Progress Chart")
 	result.WriteString(title + "\n")
 
-	// Separator
 	result.WriteString(strings.Repeat("─", wc.width+8) + "\n") // +8 for Y-axis labels
 
 	// Find min/max for scaling
@@ -60,10 +59,9 @@ func (wc *WPMChartBubble) View() string {
 	}
 
 	if max == min {
-		max = min + 1 // Avoid division by zero
+		max = min + 1
 	}
 
-	// Create the chart with Y-axis labels
 	for y := wc.height - 1; y >= 0; y-- {
 		// Y-axis label
 		if wc.showYAxis {
@@ -106,18 +104,6 @@ func (wc *WPMChartBubble) View() string {
 		result.WriteString(strings.Repeat(" ", wc.width-4))
 		result.WriteString(fmt.Sprintf("%ds\n", len(wc.data)-1))
 	}
-
-	// Y-axis label
-	// if wc.showYAxis {
-	// 	result.WriteString("     WPM\n")
-	// }
-
-	// // Statistics
-	// result.WriteString("\n" + wc.style.Copy().Bold(true).Render("Statistics:\n"))
-	// result.WriteString(fmt.Sprintf("Average WPM: %.1f\n", wc.averageWPM()))
-	// result.WriteString(fmt.Sprintf("Peak WPM: %.1f\n", max))
-	// result.WriteString(fmt.Sprintf("Lowest WPM: %.1f\n", min))
-	// result.WriteString(fmt.Sprintf("Total Time: %ds\n", len(wc.data)))
 
 	return result.String()
 }

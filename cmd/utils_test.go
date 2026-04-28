@@ -147,12 +147,12 @@ func TestAverageStringLen(t *testing.T) {
 		{
 			name:     "multiple strings",
 			input:    []string{"hi", "hello", "world"},
-			expected: 4, // (2 + 5 + 5) / 3 = 4
+			expected: 4,
 		},
 		{
 			name:     "strings with different lengths",
 			input:    []string{"a", "bb", "ccc"},
-			expected: 2, // (1 + 2 + 3) / 3 = 2
+			expected: 2,
 		},
 	}
 
@@ -185,7 +185,7 @@ func TestAverageLineLen(t *testing.T) {
 		{
 			name:     "multiple lines",
 			input:    []string{"hi", "hello", "world"},
-			expected: 3, // (2 + 5) / 2 = 3 (last line dropped)
+			expected: 3,
 		},
 		{
 			name:     "two lines",

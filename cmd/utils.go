@@ -35,7 +35,7 @@ func averageStringLen(strings []string) int {
 func averageLineLen(lines []string) int {
 	linesLen := len(lines)
 	if linesLen > 1 {
-		lines = lines[:linesLen-1] //Drop last line, as it might skew up average length
+		lines = lines[:linesLen-1]
 	}
 
 	return averageStringLen(lines)

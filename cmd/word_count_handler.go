@@ -73,7 +73,6 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 			handleBackspace(&h.base)
 			recordInputBackspace(&h.base, h.stopwatch.Elapsed().Milliseconds())
 		case "ctrl+t":
-			// Delete entire word
 			handleCtrlBackspace(&h.base)
 		default:
 			switch msg.Type {
@@ -91,7 +90,6 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 
 	if len(h.base.wordsToEnter) == len(h.base.inputBuffer) &&
 		!h.base.mistakes.mistakesAt[len(h.base.inputBuffer)-1] {
-		//termenv.DefaultOutput().Reset()
 		results := h.calculateResults(context.model)
 		return &results, tea.Batch(commands...)
 	}

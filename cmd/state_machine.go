@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 // StateType represents all possible states in the application

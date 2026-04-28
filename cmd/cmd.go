@@ -11,12 +11,12 @@ import (
 	"termtyper/database"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 	"github.com/charmbracelet/ssh"
-	"github.com/charmbracelet/wish"
-	"github.com/charmbracelet/wish/activeterm"
-	"github.com/charmbracelet/wish/bubbletea"
-	lm "github.com/charmbracelet/wish/logging"
+	"charm.land/wish/v2"
+	"charm.land/wish/v2/activeterm"
+	"charm.land/wish/v2/bubbletea"
+	lm "charm.land/wish/v2/logging"
 	"github.com/muesli/termenv"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -74,7 +74,6 @@ var (
 						},
 					},
 				),
-				tea.WithAltScreen(),
 			)
 
 			_, err = p.Run()
@@ -151,5 +150,5 @@ func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
 		sess,
 	)
 
-	return m, []tea.ProgramOption{tea.WithAltScreen()}
+	return m, nil
 }

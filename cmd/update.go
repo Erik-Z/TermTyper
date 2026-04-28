@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -17,7 +17,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.stateMachine.model.height = msg.Height
 			return m, nil
 		}
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "ctrl+c":
 			return m, tea.Quit
@@ -70,16 +70,16 @@ func handleCtrlBackspace(base *TestBase) {
 	base.cursor = base.cursor - charToDelete
 }
 
-func handleCharacterInputFromMsg(msg tea.KeyMsg, base *TestBase) {
+func handleCharacterInputFromMsg(msg tea.KeyPressMsg, base *TestBase) {
 	// TODO: Fix this. Doesn't work, I can still paste into input buffer.
-	if len(msg.Runes) > 1 {
+	if len(msg.Text) > 1 {
 		return
 	}
 
 	if len(base.inputBuffer) == len(base.wordsToEnter) {
 		return
 	}
-	inputLetter := msg.Runes[len(msg.Runes)-1]
+	inputLetter := []rune(msg.Text)[len([]rune(msg.Text))-1]
 	currInputBufferLen := len(base.inputBuffer)
 	correctNextLetter := base.wordsToEnter[currInputBufferLen]
 
@@ -114,8 +114,8 @@ func handleCharacterInputFromRune(char rune, base *TestBase) {
 	base.cursor = newCursorPosition
 }
 
-func handleCharacterInputZenMode(msg tea.KeyMsg, base *TestBase) {
-	inputLetter := msg.Runes[len(msg.Runes)-1]
+func handleCharacterInputZenMode(msg tea.KeyPressMsg, base *TestBase) {
+	inputLetter := []rune(msg.Text)[len([]rune(msg.Text))-1]
 	base.inputBuffer = append(base.inputBuffer, inputLetter)
 	base.rawInputCount += 1
 
@@ -123,7 +123,7 @@ func handleCharacterInputZenMode(msg tea.KeyMsg, base *TestBase) {
 	base.cursor = newCursorPosition
 }
 
-func recordInput(msg tea.KeyMsg, base *TestBase, timestamp int64) {
+func recordInput(msg tea.KeyPressMsg, base *TestBase, timestamp int64) {
 	var keyPress KeyPress
 	if msg.String() == "backspace" {
 		keyPress = KeyPress{
@@ -132,7 +132,7 @@ func recordInput(msg tea.KeyMsg, base *TestBase, timestamp int64) {
 		}
 	} else {
 		keyPress = KeyPress{
-			key:       msg.Runes[len(msg.Runes)-1],
+			key:       []rune(msg.Text)[len([]rune(msg.Text))-1],
 			timestamp: timestamp,
 		}
 	}

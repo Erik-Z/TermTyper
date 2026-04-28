@@ -3,9 +3,9 @@ package cmd
 import (
 	"strings"
 
-	"github.com/charmbracelet/bubbles/stopwatch"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/stopwatch"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type ZenModeHandler struct {
@@ -53,7 +53,7 @@ func (h *ZenModeHandler) HandleInput(msg tea.Msg, context *StateContext) (StateH
 			h.base.wpmEachSecond = append(h.base.wpmEachSecond, h.base.calculateNormalizedWpm(elapsedMinutes))
 		}
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "esc":
 			if h.ValidateTransition(StateMainMenu, context) {
@@ -68,8 +68,7 @@ func (h *ZenModeHandler) HandleInput(msg tea.Msg, context *StateContext) (StateH
 		case "backspace":
 			handleBackspace(&h.base)
 		default:
-			switch msg.Type {
-			case tea.KeyRunes:
+			if len(msg.Text) > 0 || msg.String() == "space" {
 				if !h.stopwatch.isRunning {
 					commands = append(commands, h.stopwatch.stopwatch.Init())
 					h.stopwatch.isRunning = true

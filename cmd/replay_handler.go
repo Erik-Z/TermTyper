@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/stopwatch"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/stopwatch"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type ReplayHandler struct {
@@ -34,7 +34,7 @@ func NewReplayHandler(results ResultsHandler) *ReplayHandler {
 		replaySelection:   []string{"New Test", "Main Menu", "Replay"},
 		replayCursor:      0,
 		stopwatch: StopWatch{
-			stopwatch: stopwatch.NewWithInterval(time.Millisecond),
+			stopwatch: stopwatch.New(),
 			isRunning: false,
 		},
 	}
@@ -45,7 +45,7 @@ func (h *ReplayHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHa
 
 	if h.replayDone {
 		switch msg := msg.(type) {
-		case tea.KeyMsg:
+		case tea.KeyPressMsg:
 			switch msg.String() {
 			case "enter":
 				switch h.replaySelection[h.replayCursor] {
@@ -86,7 +86,7 @@ func (h *ReplayHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHa
 		h.stopwatch.stopwatch = stopwatchUpdate
 		commands = append(commands, cmdUpdate)
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		if !h.isReplayInProcess {
 			h.isReplayInProcess = true
 		}

@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/timer"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/timer"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type TimerTestHandler struct {
@@ -23,7 +23,7 @@ func NewTimerTestHandler(menu MainMenuHandler) *TimerTestHandler {
 	return &TimerTestHandler{
 		BaseStateHandler: NewBaseStateHandler(StateTimerTest),
 		timer: Timer{
-			timer:     timer.NewWithInterval(testDuration, time.Second),
+			timer:     timer.New(testDuration),
 			duration:  testDuration,
 			isRunning: false,
 			timedout:  false,
@@ -63,7 +63,7 @@ func (h *TimerTestHandler) HandleInput(msg tea.Msg, context *StateContext) (Stat
 			return &results, tea.Batch(commands...)
 		}
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "esc":
 			if h.ValidateTransition(StateMainMenu, context) {
@@ -81,8 +81,7 @@ func (h *TimerTestHandler) HandleInput(msg tea.Msg, context *StateContext) (Stat
 		case "ctrl+r":
 			return NewTimerTestHandler(h.base.mainMenu), nil
 		default:
-			switch msg.Type {
-			case tea.KeyRunes, tea.KeySpace:
+			if len(msg.Text) > 0 || msg.String() == "space" {
 				if !h.timer.isRunning {
 					h.timer.startTime = time.Now()
 					commands = append(commands, h.timer.timer.Init())

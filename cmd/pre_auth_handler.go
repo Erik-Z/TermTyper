@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"termtyper/database"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type PreAuthHandler struct {
@@ -17,7 +17,7 @@ type PreAuthHandler struct {
 func (h *PreAuthHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHandler, tea.Cmd) {
 	newCursor := h.cursor
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "enter":
 			if _, ok := h.authMenu[newCursor].(GuestLogin); ok {

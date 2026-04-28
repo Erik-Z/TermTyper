@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"termtyper/database"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 //TODO: add "unsaved settings. Do you want to save before returning to main menu"

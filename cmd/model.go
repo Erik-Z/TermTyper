@@ -4,8 +4,8 @@ import (
 	"termtyper/database"
 	"time"
 
-	"github.com/charmbracelet/bubbles/stopwatch"
-	"github.com/charmbracelet/bubbles/timer"
+	"charm.land/bubbles/v2/stopwatch"
+	"charm.land/bubbles/v2/timer"
 	"github.com/muesli/termenv"
 )
 

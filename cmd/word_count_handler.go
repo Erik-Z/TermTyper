@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/bubbles/stopwatch"
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/bubbles/v2/stopwatch"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type WordCountTestHandler struct {
@@ -24,7 +24,7 @@ func NewWordCountTestHandler(menu MainMenuHandler) *WordCountTestHandler {
 	return &WordCountTestHandler{
 		BaseStateHandler: NewBaseStateHandler(StateWordCountTest),
 		stopwatch: StopWatch{
-			stopwatch: stopwatch.NewWithInterval(time.Millisecond * 100),
+			stopwatch: stopwatch.New(),
 			isRunning: false,
 		},
 		base: TestBase{
@@ -60,7 +60,7 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 			h.base.wpmEachSecond = append(h.base.wpmEachSecond, h.base.calculateNormalizedWpm(elapsedMinutes))
 		}
 
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "esc":
 			if h.ValidateTransition(StateMainMenu, context) {
@@ -75,13 +75,13 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 		case "ctrl+t":
 			handleCtrlBackspace(&h.base)
 		default:
-			switch msg.Type {
-			case tea.KeyRunes, tea.KeySpace:
+			if len(msg.Text) > 0 || msg.String() == "space" {
 				if !h.stopwatch.isRunning {
 					h.stopwatch.startTime = time.Now()
 					commands = append(commands, h.stopwatch.stopwatch.Init())
 					h.stopwatch.isRunning = true
 				}
+
 				handleCharacterInputFromMsg(msg, &h.base)
 				recordInput(msg, &h.base, h.stopwatch.Elapsed().Milliseconds())
 			}

@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 )
 
-// WPMChartBubble is a Bubble Tea compatible chart
 type WPMChartBubble struct {
 	data       []float64
 	width      int

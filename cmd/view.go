@@ -7,7 +7,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 	"github.com/muesli/reflow/indent"
 	"github.com/muesli/reflow/wordwrap"
 )
@@ -22,7 +23,7 @@ var resultsStyle = lipgloss.NewStyle().
 	PaddingLeft(5).
 	PaddingRight(5)
 
-func (m model) View() string {
+func (m model) View() tea.View {
 	m.session.mu.Lock()
 	defer m.session.mu.Unlock()
 
@@ -30,7 +31,9 @@ func (m model) View() string {
 	reactiveLimit := (termWidth * 6) / 10
 	lineLenLimit = int(math.Min(float64(maxLineLen), math.Max(float64(minLineLen), float64(reactiveLimit))))
 
-	return m.stateMachine.Render()
+	v := tea.NewView(m.stateMachine.Render())
+	v.AltScreen = true
+	return v
 }
 
 func (base *TestBase) renderParagraph(lineLimit int, styles Styles) string {

@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-	"runtime"
 	"termtyper/database"
 
 	tea "charm.land/bubbletea/v2"
@@ -66,14 +64,4 @@ func initModel(termProfile termenv.Profile, foregroundColor termenv.Color, width
 	m.stateMachine.handlers[StatePreAuth] = NewPreAuthHandler(&databaseContext)
 
 	return m
-}
-
-func OsInit() {
-	if runtime.GOOS == "windows" {
-		mode, err := termenv.EnableWindowsANSIConsole()
-		if err != nil {
-			fmt.Println(err)
-		}
-		defer termenv.RestoreWindowsConsole(mode)
-	}
 }

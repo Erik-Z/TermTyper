@@ -33,7 +33,7 @@ import (
 // TODO: Add a really good readme.md with screenshots, gifs, and maybe even a demo video. The readme should also include instructions on how to use the software.
 
 var (
-	host           = "127.0.0.1"
+	host           = "192.168.86.133"
 	port           = 22222
 	privateKeyPath string
 )

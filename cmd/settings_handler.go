@@ -80,12 +80,41 @@ func NewSettingsHandler(user *database.ApplicationUser) *SettingsHandler {
 	}
 }
 
+func (h *SettingsHandler) HasUnsavedChanges() bool {
+	for _, setting := range h.settingSelections {
+		switch s := setting.(type) {
+		case *TimerSettings:
+			if s.selectionCursor != s.timerCursor {
+				return true
+			}
+		case *WordsSettings:
+			if s.selectionCursor != s.wordsCursor {
+				return true
+			}
+		case *PunctuationSettings:
+			if s.enabled != s.savedValue {
+				return true
+			}
+		case *ThemeSettings:
+			if s.themeIndex != s.savedIndex {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func (h *SettingsHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHandler, tea.Cmd) {
 	newCursor := h.settingsCursor
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "esc", "ctrl+q":
+			if h.HasUnsavedChanges() {
+				if h.ValidateTransition(StateSettingsUnsavedPrompt, context) {
+					return NewUnsavedPromptHandler(h, context.model.session.User, context.model), nil
+				}
+			}
 			if h.ValidateTransition(StateMainMenu, context) {
 				return NewMainMenuHandler(context.model.session.User, context.model), nil
 			}
@@ -135,7 +164,10 @@ func (h *SettingsHandler) Render(m *model) string {
 		settingSelection = append(settingSelection, choiceShow)
 	}
 
+	helpText := lipgloss.NewStyle().Faint(true).Render("\nenter: save, ctrl+q: exit")
+
 	joined := lipgloss.JoinVertical(lipgloss.Left, append([]string{settings}, settingSelection...)...)
+	joined = lipgloss.JoinVertical(lipgloss.Left, joined, helpText)
 	renderString := lipgloss.NewStyle().Align(lipgloss.Left).Render(joined)
 	centeredText := lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, renderString)
 
@@ -316,4 +348,67 @@ func formatSettingsDuration(seconds int) string {
 	minutes := seconds / 60
 	remainingSeconds := seconds % 60
 	return fmt.Sprintf("%dm%ds", minutes, remainingSeconds)
+}
+
+type UnsavedPromptHandler struct {
+	*BaseStateHandler
+	settingsHandler *SettingsHandler
+	cursor          int
+}
+
+func NewUnsavedPromptHandler(settingsHandler *SettingsHandler, user *database.ApplicationUser, m *model) *UnsavedPromptHandler {
+	return &UnsavedPromptHandler{
+		BaseStateHandler: NewBaseStateHandler(StateSettingsUnsavedPrompt),
+		settingsHandler:  settingsHandler,
+		cursor:          0,
+	}
+}
+
+func (h *UnsavedPromptHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHandler, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "left", "h":
+			if h.cursor == 0 {
+				h.cursor = 1
+			} else {
+				h.cursor = 0
+			}
+		case "right", "l":
+			if h.cursor == 1 {
+				h.cursor = 0
+			} else {
+				h.cursor = 1
+			}
+		case "enter":
+			if h.cursor == 0 {
+				h.settingsHandler.SaveAllSettings(context)
+			}
+			return NewMainMenuHandler(context.model.session.User, context.model), nil
+		case "esc", "ctrl+q":
+			return NewMainMenuHandler(context.model.session.User, context.model), nil
+		}
+	}
+	return h, nil
+}
+
+func (h *UnsavedPromptHandler) Render(m *model) string {
+	termWidth, termHeight := m.width-2, m.height-2
+
+	prompt := style("You have unsaved settings. Save before exiting?", m.styles.themeFunc)
+
+	yesOption := wrapWithCursor(h.cursor == 0, "yes", m.styles.themeFunc)
+	noOption := wrapWithCursor(h.cursor == 1, "no", m.styles.toEnter)
+	options := lipgloss.NewStyle().PaddingTop(1).Render(yesOption + "  " + noOption)
+
+	joined := lipgloss.JoinVertical(lipgloss.Center, prompt, options)
+	centeredText := lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, joined)
+
+	return centeredText
+}
+
+func (h *SettingsHandler) SaveAllSettings(context *StateContext) {
+	for _, setting := range h.settingSelections {
+		setting.SaveSettings(context)
+	}
 }

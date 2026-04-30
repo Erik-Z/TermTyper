@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"testing"
+
+	"github.com/muesli/termenv"
 )
 
 func TestNewStateMachine(t *testing.T) {
@@ -148,12 +150,16 @@ func TestStateMachineHandleInput(t *testing.T) {
 
 func TestStateMachineRender(t *testing.T) {
 	// Initialize model with required fields
+	termProfile := termenv.ANSI256
+	foregroundColor := termenv.ANSIWhite
 	themeColor := "#FF00FF"
 
 	m := &model{
-		width:  80,
-		height: 24,
-		styles: createStyles(themeColor),
+		width:       80,
+		height:      24,
+		termProfile: termProfile,
+		foregroundColor: foregroundColor,
+		styles:     createStyles(termProfile, foregroundColor, themeColor),
 	}
 	sm := NewStateMachine(m)
 

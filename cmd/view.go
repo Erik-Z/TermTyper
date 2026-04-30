@@ -192,7 +192,7 @@ func getLinesAroundCursor(lines []string, cursorLine int) []string {
 }
 
 func style(str string, style StringStyle) string {
-	return style(str)
+	return style(str).String()
 }
 
 func styleAll(runes []rune, style StringStyle) string {
@@ -200,7 +200,7 @@ func styleAll(runes []rune, style StringStyle) string {
 
 	for idx, char := range runes {
 		_ = idx
-		acc.WriteString(style(string(char)))
+		acc.WriteString(style(string(char)).String())
 	}
 
 	return acc.String()

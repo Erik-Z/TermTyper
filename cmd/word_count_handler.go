@@ -75,8 +75,6 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 		case "backspace":
 			handleBackspace(&h.base)
 			recordInputBackspace(&h.base, h.stopwatch.Elapsed().Milliseconds())
-		case "ctrl+q":
-			return NewMainMenuHandler(context.model.session.User, context.model), nil
 		case "ctrl+t":
 			handleCtrlBackspace(&h.base)
 		default:

@@ -6,7 +6,6 @@ import (
 
 	"charm.land/bubbles/v2/stopwatch"
 	"charm.land/bubbles/v2/timer"
-	"github.com/muesli/termenv"
 )
 
 type model struct {
@@ -15,8 +14,6 @@ type model struct {
 	width, height   int
 	context         database.Context
 	session         *Session
-	termProfile     termenv.Profile
-	foregroundColor termenv.Color
 }
 
 type State interface{}
@@ -57,13 +54,13 @@ type StopWatch struct {
 	startTime time.Time
 }
 
-type StringStyle func(string) termenv.Style
+type StringStyle func(string) string
 
 type Styles struct {
-	correct  StringStyle
-	mistake  StringStyle
-	cursor   StringStyle
-	toEnter  StringStyle
+	correct   StringStyle
+	mistake   StringStyle
+	cursor    StringStyle
+	toEnter   StringStyle
 	themeFunc StringStyle
 }
 

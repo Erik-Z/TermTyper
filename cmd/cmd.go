@@ -12,12 +12,10 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/charmbracelet/ssh"
 	"charm.land/wish/v2"
-	"charm.land/wish/v2/activeterm"
 	"charm.land/wish/v2/bubbletea"
 	lm "charm.land/wish/v2/logging"
-	"github.com/muesli/termenv"
+	"github.com/charmbracelet/ssh"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
 )
@@ -49,78 +47,78 @@ type Session struct {
 var (
 	Version       = "dev"
 	sshServerFlag bool
-	RootCmd       = &cobra.Command{
-		Use:  "TermTyper",
-		Long: "TermTyper - Terminal Typing Test",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			termWidth, termHeight, err := term.GetSize(int(os.Stdout.Fd()))
-
-			if err != nil {
-				fmt.Println("Error getting terminal size", err)
-				return err
-			}
-
-			p := tea.NewProgram(
-				initModel(
-					termenv.ColorProfile(),
-					termenv.ForegroundColor(),
-					termWidth, termHeight,
-					&Session{
-						LastActivity: time.Now(),
-						User: &database.ApplicationUser{
-							Id:       -1,
-							Username: "Guest",
-							Config:   &database.DefaultConfig,
-						},
-					},
-				),
-			)
-
-			_, err = p.Run()
-			return err
-		},
-	}
-	serveCmd = &cobra.Command{
-		Use:  "serve",
-		Long: "Serve as an SSH server",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			s, err := wish.NewServer(
-				wish.WithAddress(fmt.Sprintf("%s:%d", host, port)),
-				wish.WithHostKeyPath(privateKeyPath),
-				wish.WithMiddleware(
-					bubbletea.Middleware(teaHandler),
-					activeterm.Middleware(),
-					lm.Middleware(),
-				),
-			)
-
-			if err != nil {
-				return err
-			}
-
-			done := make(chan os.Signal, 1)
-			signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-
-			log.Printf("Starting server on %s:%d", host, port)
-			go func() {
-				if err := s.ListenAndServe(); err != nil {
-					log.Fatalln(err)
-				}
-			}()
-
-			<-done
-
-			log.Printf("Stopping SSH server on %s:%d", host, port)
-			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-			defer func() { cancel() }()
-			if err := s.Shutdown(ctx); err != nil {
-				return err
-			}
-
-			return nil
-		},
-	}
 )
+
+var RootCmd = &cobra.Command{
+	Use:  "TermTyper",
+	Long: "TermTyper - Terminal Typing Test",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		termWidth, termHeight, err := term.GetSize(int(os.Stdout.Fd()))
+
+		if err != nil {
+			fmt.Println("Error getting terminal size", err)
+			return err
+		}
+
+		p := tea.NewProgram(
+			initModel(
+				termWidth, termHeight,
+				&Session{
+					LastActivity: time.Now(),
+					User: &database.ApplicationUser{
+						Id:       -1,
+						Username: "Guest",
+						Config:   &database.DefaultConfig,
+					},
+				},
+			),
+		)
+
+		_, err = p.Run()
+		return err
+	},
+}
+
+var serveCmd = &cobra.Command{
+	Use:  "serve",
+	Long: "Serve as an SSH server",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		s, err := wish.NewServer(
+			ssh.AllocatePty(),
+			wish.WithAddress(fmt.Sprintf("%s:%d", host, port)),
+			wish.WithHostKeyPath(privateKeyPath),
+			wish.WithMiddleware(
+				lm.Middleware(),
+				termTyperMiddleware(),
+			),
+		)
+
+		if err != nil {
+			return err
+		}
+
+		done := make(chan os.Signal, 1)
+		signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+		log.Printf("Starting server on %s:%d", host, port)
+		go func() {
+			if err := s.ListenAndServe(); err != nil {
+				log.Fatalln(err)
+			}
+		}()
+
+		<-done
+
+		log.Printf("Stopping SSH server on %s:%d", host, port)
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		defer func() { cancel() }()
+		if err := s.Shutdown(ctx); err != nil {
+			return err
+		}
+
+		return nil
+	},
+}
 
 func init() {
 	RootCmd.PersistentFlags().BoolVar(&sshServerFlag, "ssh-server", false, "Serve as an SSH server")
@@ -130,25 +128,35 @@ func init() {
 	RootCmd.AddCommand(serveCmd)
 }
 
-func teaHandler(s ssh.Session) (tea.Model, []tea.ProgramOption) {
-	pty, _, _ := s.Pty()
-	sess := &Session{
-		RemoteAddr:   s.RemoteAddr().String(),
-		LastActivity: time.Now(),
-		User: &database.ApplicationUser{
-			Id:       -1,
-			Username: "Guest",
-			Config:   &database.DefaultConfig,
-		},
+func termTyperMiddleware() wish.Middleware {
+	teahandler := func(s ssh.Session) *tea.Program {
+		sess := &Session{
+			RemoteAddr:   s.RemoteAddr().String(),
+			LastActivity: time.Now(),
+			User: &database.ApplicationUser{
+				Id:       -1,
+				Username: "Guest",
+				Config:   &database.DefaultConfig,
+			},
+		}
+
+		// Use default terminal size if PTY is not available
+		width, height := 80, 24
+		pty, _, active := s.Pty()
+		if active {
+			width = pty.Window.Width
+			height = pty.Window.Height
+		}
+
+		m := initModel(
+			width,
+			height,
+			sess,
+		)
+		opts := bubbletea.MakeOptions(s)
+		opts = append(opts, tea.WithEnvironment(s.Environ()))
+		p := tea.NewProgram(m, opts...)
+		return p
 	}
-
-	m := initModel(
-		termenv.ANSI256,
-		termenv.ANSIWhite,
-		pty.Window.Width,
-		pty.Window.Height,
-		sess,
-	)
-
-	return m, nil
+	return bubbletea.MiddlewareWithProgramHandler(teahandler)
 }

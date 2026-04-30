@@ -24,7 +24,7 @@ func NewMainMenuHandler(user *database.ApplicationUser, m *model) *MainMenuHandl
 		themeName = "Magenta"
 	}
 	themeColor := GetThemeColor(themeName)
-	m.styles = createStyles(m.termProfile, m.foregroundColor, themeColor)
+	m.styles = createStyles(themeColor)
 
 	timerGen := words.NewGenerator()
 	timerGen.Punctuation = user.Config.Punctuation

@@ -1,47 +1,37 @@
 package cmd
 
 import (
-	"fmt"
-	"runtime"
 	"termtyper/database"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/muesli/termenv"
+	"charm.land/lipgloss/v2"
 )
 
-func createStyles(termProfile termenv.Profile, foregroundColor termenv.Color, themeColor string) Styles {
+func createStyles(themeColor string) Styles {
 	return Styles{
-		correct: func(str string) termenv.Style {
-			return termenv.String(str).Foreground(foregroundColor)
+		correct: func(str string) string {
+			return lipgloss.NewStyle().Foreground(lipgloss.Color("2")).Render(str)
 		},
-		toEnter: func(str string) termenv.Style {
-			return termenv.String(str).Foreground(foregroundColor).Faint()
+		toEnter: func(str string) string {
+			return lipgloss.NewStyle().Foreground(lipgloss.Color("7")).Faint(true).Render(str)
 		},
-		mistake: func(str string) termenv.Style {
-			return termenv.String(str).Foreground(termProfile.Color("1"))
+		mistake: func(str string) string {
+			return lipgloss.NewStyle().Foreground(lipgloss.Color("1")).Render(str)
 		},
-		cursor: func(str string) termenv.Style {
-			return termenv.String(str).Reverse().Bold()
+		cursor: func(str string) string {
+			return lipgloss.NewStyle().Reverse(true).Bold(true).Render(str)
 		},
-		themeFunc: func(str string) termenv.Style {
-			return termenv.String(str).Foreground(termProfile.Color(themeColor))
+		themeFunc: func(str string) string {
+			return lipgloss.NewStyle().Foreground(lipgloss.Color(themeColor)).Render(str)
 		},
 	}
-}
-
-func getTermProfile(m *model) termenv.Profile {
-	return m.termProfile
-}
-
-func getForegroundColor(m *model) termenv.Color {
-	return m.foregroundColor
 }
 
 func (m model) Init() tea.Cmd {
 	return nil
 }
 
-func initModel(termProfile termenv.Profile, foregroundColor termenv.Color, width, height int, sess *Session) model {
+func initModel(width, height int, sess *Session) model {
 	databaseContext := database.InitDB()
 
 	themeName := "Magenta"
@@ -51,13 +41,11 @@ func initModel(termProfile termenv.Profile, foregroundColor termenv.Color, width
 	themeColor := GetThemeColor(themeName)
 
 	m := model{
-		width:           width,
-		height:          height,
-		context:         databaseContext,
-		session:         sess,
-		termProfile:     termProfile,
-		foregroundColor: foregroundColor,
-		styles:          createStyles(termProfile, foregroundColor, themeColor),
+		width:   width,
+		height:  height,
+		context: databaseContext,
+		session: sess,
+		styles:  createStyles(themeColor),
 	}
 
 	// Initialize state machine with pre-authentication state
@@ -66,14 +54,4 @@ func initModel(termProfile termenv.Profile, foregroundColor termenv.Color, width
 	m.stateMachine.handlers[StatePreAuth] = NewPreAuthHandler(&databaseContext)
 
 	return m
-}
-
-func OsInit() {
-	if runtime.GOOS == "windows" {
-		mode, err := termenv.EnableWindowsANSIConsole()
-		if err != nil {
-			fmt.Println(err)
-		}
-		defer termenv.RestoreWindowsConsole(mode)
-	}
 }

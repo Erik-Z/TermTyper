@@ -62,7 +62,7 @@ func (h *TimerTestHandler) HandleInput(msg tea.Msg, context *StateContext) (Stat
 		if h.timer.timer.Timedout() {
 			h.timer.timedout = true
 
-			results := h.calculateResults(context.model)
+			results := h.calculateResults(context.model, context)
 			return &results, tea.Batch(commands...)
 		}
 
@@ -136,16 +136,21 @@ func (h *TimerTestHandler) ValidateTransition(to StateType, context *StateContex
 	return false
 }
 
-func (test TimerTestHandler) calculateResults(m *model) ResultsHandler {
+func (test TimerTestHandler) calculateResults(m *model, context *StateContext) ResultsHandler {
 	elapsedMinutes := test.timer.duration.Minutes()
 	wpm := test.base.calculateNormalizedWpm(elapsedMinutes)
 	wpmChart := NewWPMChartBubble(m.width/2, m.height/2)
 	wpmChart.UpdateData(test.base.wpmEachSecond)
 
+	accuracy := test.base.calculateAccuracy()
+	isPunctuation := test.base.mainMenu.currentUser.Config.Punctuation
+
+	saveTestResult(context, "timer", int(test.timer.duration.Seconds()), test.timer.duration.Seconds(), wpm, accuracy, isPunctuation, test.base.rawInputCount, test.base.mistakes.rawMistakesCnt)
+
 	return ResultsHandler{
 		testType:      "timer",
 		wpm:           int(wpm),
-		accuracy:      test.base.calculateAccuracy(),
+		accuracy:      accuracy,
 		rawWpm:        int(test.base.calculateRawWpm(elapsedMinutes)),
 		cpm:           test.base.calculateCpm(elapsedMinutes),
 		time:          test.timer.duration,

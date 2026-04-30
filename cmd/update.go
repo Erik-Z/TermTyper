@@ -34,6 +34,7 @@ func handleBackspace(base *TestBase) {
 
 	base.inputBuffer = deleteLastChar(base.inputBuffer)
 	inputLength := len(base.inputBuffer)
+	base.rawInputCount -= 1
 	_, ok := base.mistakes.mistakesAt[inputLength]
 
 	if ok {

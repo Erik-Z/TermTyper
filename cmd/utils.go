@@ -145,3 +145,25 @@ func convertToInt(val interface{}) (int, error) {
 		return 0, fmt.Errorf("cannot convert %T to int", val)
 	}
 }
+
+func saveTestResult(context *StateContext, testType string, testValue int, duration float64, wpm float64, accuracy float64, isPunctuation bool, rawInputCount int, mistakesCount int) {
+	userID := context.model.session.User.Id
+	if userID <= 0 {
+		return
+	}
+
+	record := &database.TestRecord{
+		UserID:        userID,
+		TestType:      testType,
+		TestValue:     testValue,
+		Duration:      duration,
+		WPM:          wpm,
+		WordsTyped:    rawInputCount / 5,
+		Accuracy:      accuracy,
+		IsPunctuation: isPunctuation,
+		RawChars:      rawInputCount,
+		MistakesCount: mistakesCount,
+	}
+
+	_ = database.SaveTestResult(context.model.context.UserRepository, record)
+}

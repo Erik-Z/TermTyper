@@ -95,7 +95,7 @@ func (h *WordCountTestHandler) HandleInput(msg tea.Msg, context *StateContext) (
 
 	if len(h.base.wordsToEnter) == len(h.base.inputBuffer) &&
 		!h.base.mistakes.mistakesAt[len(h.base.inputBuffer)-1] {
-		results := h.calculateResults(context.model)
+		results := h.calculateResults(context.model, context)
 		return &results, tea.Batch(commands...)
 	}
 
@@ -134,16 +134,21 @@ func (h *WordCountTestHandler) ValidateTransition(to StateType, context *StateCo
 	return false
 }
 
-func (test WordCountTestHandler) calculateResults(m *model) ResultsHandler {
+func (test WordCountTestHandler) calculateResults(m *model, context *StateContext) ResultsHandler {
 	elapsedMinutes := test.stopwatch.Elapsed().Minutes()
 	wpm := test.base.calculateNormalizedWpm(elapsedMinutes)
 	wpmChart := NewWPMChartBubble(m.width/2, m.height/2)
 	wpmChart.UpdateData(test.base.wpmEachSecond)
 
+	accuracy := test.base.calculateAccuracy()
+	isPunctuation := test.base.mainMenu.currentUser.Config.Punctuation
+
+	saveTestResult(context, "words", test.base.mainMenu.currentUser.Config.Words, test.stopwatch.Elapsed().Seconds(), wpm, accuracy, isPunctuation, test.base.rawInputCount, test.base.mistakes.rawMistakesCnt)
+
 	return ResultsHandler{
 		testType:      "wordcount",
 		wpm:           int(wpm),
-		accuracy:      test.base.calculateAccuracy(),
+		accuracy:      accuracy,
 		rawWpm:        int(test.base.calculateRawWpm(elapsedMinutes)),
 		cpm:           test.base.calculateCpm(elapsedMinutes),
 		time:          test.stopwatch.Elapsed(),

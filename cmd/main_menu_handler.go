@@ -39,6 +39,7 @@ func NewMainMenuHandler(user *database.ApplicationUser, m *model) *MainMenuHandl
 			"Word Count",
 			"Zen",
 			"Config",
+			"User Settings",
 		},
 		currentUser:            user,
 		cursor:                 0,
@@ -69,6 +70,8 @@ func (h *MainMenuHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 				if h.ValidateTransition(StateSettings, context) {
 					return NewSettingsHandler(context.model.session.User), nil
 				}
+			case "User Settings":
+				// TODO: implement user settings page
 			}
 		case "up", "k":
 			if h.cursor == 0 {
@@ -82,6 +85,8 @@ func (h *MainMenuHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 			} else {
 				h.cursor++
 			}
+		case "ctrl+q":
+			return NewPreAuthHandler(&context.model.context), nil
 		}
 	}
 	return h, nil
@@ -102,7 +107,10 @@ func (h *MainMenuHandler) Render(m *model) string {
 		menuItems = append(menuItems, choiceShow)
 	}
 
+	helpText := lipgloss.NewStyle().Faint(true).Render("\nenter: select, ctrl+q: logout")
+
 	joined := lipgloss.JoinVertical(lipgloss.Left, append([]string{termtyper}, menuItems...)...)
+	joined = lipgloss.JoinVertical(lipgloss.Left, joined, helpText)
 	s := lipgloss.NewStyle().Align(lipgloss.Left).Render(joined)
 	centeredText := lipgloss.Place(termWidth, termHeight, lipgloss.Center, lipgloss.Center, s)
 

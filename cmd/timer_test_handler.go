@@ -79,7 +79,7 @@ func (h *TimerTestHandler) HandleInput(msg tea.Msg, context *StateContext) (Stat
 		case "ctrl+t":
 			// Delete entire word
 			handleCtrlBackspace(&h.base)
-		case "ctrl+w":
+		case "ctrl+q":
 			return NewMainMenuHandler(context.model.session.User, context.model), nil
 		case "ctrl+r":
 			return NewTimerTestHandler(h.base.mainMenu), nil

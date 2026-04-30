@@ -16,7 +16,7 @@ require (
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/crypto v0.50.0
 	golang.org/x/term v0.42.0
-	modernc.org/sqlite v1.37.0
+	modernc.org/sqlite v1.50.0
 )
 
 require (
@@ -53,7 +53,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.23 // indirect
 	github.com/mitchellh/hashstructure/v2 v2.0.2 // indirect
 	github.com/muesli/cancelreader v0.2.2 // indirect
-	github.com/ncruces/go-strftime v0.1.9 // indirect
+	github.com/ncruces/go-strftime v1.0.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -65,7 +65,7 @@ require (
 	golang.org/x/sys v0.43.0 // indirect
 	golang.org/x/tools v0.43.0 // indirect
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
-	modernc.org/libc v1.65.4 // indirect
+	modernc.org/libc v1.72.0 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
-	modernc.org/memory v1.10.0 // indirect
+	modernc.org/memory v1.11.0 // indirect
 )

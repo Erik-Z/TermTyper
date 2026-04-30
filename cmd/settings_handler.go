@@ -42,8 +42,8 @@ type PunctuationSettings struct {
 }
 
 type ThemeSettings struct {
-	themeIndex  int
-	savedIndex  int
+	themeIndex int
+	savedIndex int
 }
 
 func NewSettingsHandler(user *database.ApplicationUser) *SettingsHandler {
@@ -85,7 +85,7 @@ func (h *SettingsHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "esc":
+		case "esc", "ctrl+q":
 			if h.ValidateTransition(StateMainMenu, context) {
 				return NewMainMenuHandler(context.model.session.User, context.model), nil
 			}

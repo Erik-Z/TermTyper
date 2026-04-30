@@ -12,11 +12,11 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
-	"github.com/charmbracelet/ssh"
 	"charm.land/wish/v2"
 	"charm.land/wish/v2/activeterm"
 	"charm.land/wish/v2/bubbletea"
 	lm "charm.land/wish/v2/logging"
+	"github.com/charmbracelet/ssh"
 	"github.com/muesli/termenv"
 	"github.com/spf13/cobra"
 	"golang.org/x/term"
@@ -33,7 +33,7 @@ import (
 // TODO: Add a really good readme.md with screenshots, gifs, and maybe even a demo video. The readme should also include instructions on how to use the software.
 
 var (
-	host           = "localhost"
+	host           = "127.0.0.1"
 	port           = 22222
 	privateKeyPath string
 )

@@ -159,6 +159,9 @@ func NewRegisterHandler(context *database.Context,
 					if len(str) > 20 {
 						return fmt.Errorf("display name must be 20 characters or less")
 					}
+					if containsProfanity(str) {
+						return fmt.Errorf("display name contains inappropriate language")
+					}
 					return nil
 				}),
 			huh.NewInput().

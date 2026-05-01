@@ -28,9 +28,7 @@ import (
 // TODO: Add user levels. The leveling system should be similar to monkeytype, where you level up by earning experience points from typing.
 // TODO: Keep track of user test history. Allow users to view their past test result stats.
 // TODO: Use the test history to show users their progress over time. Maybe add some basic analytics, like average WPM over the past x number of tests.
-// TODO: Limit the test history to 1000 tests.
 // TODO: Keep track of time spent in the app, and show it to the user in their profile.
-// TODO: allow users to create and edit display names
 // TODO: Add a really good readme.md with screenshots, gifs, and maybe even a demo video. The readme should also include instructions on how to use the software.
 
 var (

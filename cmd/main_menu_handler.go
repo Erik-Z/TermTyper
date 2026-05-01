@@ -72,7 +72,9 @@ func (h *MainMenuHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 				}
 			case "User Settings":
 				if h.ValidateTransition(StateUserSettings, context) {
-					return NewUserSettingsHandler(context.model.session.User), nil
+					userSettingsHandler := NewUserSettingsHandler(context.model.session.User)
+					userSettingsHandler.form.Init()
+					return userSettingsHandler, nil
 				}
 			}
 		case "up", "k":

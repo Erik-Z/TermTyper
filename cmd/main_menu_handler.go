@@ -71,7 +71,9 @@ func (h *MainMenuHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 					return NewSettingsHandler(context.model.session.User), nil
 				}
 			case "User Settings":
-				// TODO: implement user settings page
+				if h.ValidateTransition(StateUserSettings, context) {
+					return NewUserSettingsHandler(context.model.session.User), nil
+				}
 			}
 		case "up", "k":
 			if h.cursor == 0 {
@@ -79,12 +81,14 @@ func (h *MainMenuHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 			} else {
 				h.cursor--
 			}
+
 		case "down", "j":
 			if h.cursor == len(h.MainMenuSelection)-1 {
 				h.cursor = 0
 			} else {
 				h.cursor++
 			}
+
 		case "ctrl+q":
 			return NewPreAuthHandler(&context.model.context), nil
 		}
@@ -94,7 +98,11 @@ func (h *MainMenuHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 
 func (h *MainMenuHandler) Render(m *model) string {
 	termWidth, termHeight := m.width-2, m.height-2
-	termtyper := style("TermTyper - Welcome "+m.session.User.Username, m.styles.themeFunc)
+	displayName := m.session.User.Username
+	if m.session.User.DisplayName != "" {
+		displayName = m.session.User.DisplayName
+	}
+	termtyper := style("TermTyper - Welcome "+displayName, m.styles.themeFunc)
 	termtyper = lipgloss.NewStyle().PaddingBottom(1).Render(termtyper)
 
 	var menuItems []string

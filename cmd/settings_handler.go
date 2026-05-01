@@ -360,7 +360,7 @@ func NewUnsavedPromptHandler(settingsHandler *SettingsHandler, user *database.Ap
 	return &UnsavedPromptHandler{
 		BaseStateHandler: NewBaseStateHandler(StateSettingsUnsavedPrompt),
 		settingsHandler:  settingsHandler,
-		cursor:          0,
+		cursor:           0,
 	}
 }
 

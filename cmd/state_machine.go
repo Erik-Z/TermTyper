@@ -18,6 +18,7 @@ const (
 	StateResults
 	StateSettings
 	StateSettingsUnsavedPrompt
+	StateUserSettings
 	StateReplay
 )
 
@@ -55,6 +56,7 @@ func NewStateMachine(m *model) *StateMachine {
 				StateZenMode,
 				StateWordCountTest,
 				StateSettings,
+				StateUserSettings,
 			},
 			StateTimerTest: {
 				StateResults,
@@ -81,6 +83,9 @@ func NewStateMachine(m *model) *StateMachine {
 				StateMainMenu,
 				StateSettings,
 			},
+			StateUserSettings: {
+				StateMainMenu,
+			},
 			StateReplay: {
 				StateMainMenu,
 			},
@@ -98,6 +103,7 @@ func NewStateMachine(m *model) *StateMachine {
 	sm.handlers[StateResults] = &ResultsHandler{}
 	sm.handlers[StateSettings] = &SettingsHandler{}
 	sm.handlers[StateSettingsUnsavedPrompt] = &UnsavedPromptHandler{}
+	sm.handlers[StateUserSettings] = &UserSettingsHandler{}
 	sm.handlers[StateReplay] = &ReplayHandler{}
 
 	return sm

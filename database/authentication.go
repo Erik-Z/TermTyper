@@ -23,9 +23,10 @@ type User struct {
 }
 
 type ApplicationUser struct {
-	Id       int64
-	Username string
-	Config   *UserConfig
+	Id          int64
+	Username    string
+	DisplayName string
+	Config      *UserConfig
 }
 
 func initUserDB() (*sql.DB, error) {
@@ -77,7 +78,7 @@ func CheckEmailExists(db *sql.DB, email string) bool {
 	return true
 }
 
-func CreateUser(db *sql.DB, email, password string) (*ApplicationUser, error) {
+func CreateUser(db *sql.DB, email, password, displayName string) (*ApplicationUser, error) {
 	tx, err := db.Begin()
 	if err != nil {
 		return nil, err
@@ -94,7 +95,7 @@ func CreateUser(db *sql.DB, email, password string) (*ApplicationUser, error) {
 		return nil, err
 	}
 
-	result, err := tx.Exec("INSERT INTO users (email, password, salt, created_at) VALUES (?, ?, ?, ?)", email, hashedPassword, salt, time.Now())
+	result, err := tx.Exec("INSERT INTO users (email, password, salt, display_name, created_at) VALUES (?, ?, ?, ?, ?)", email, hashedPassword, salt, displayName, time.Now())
 
 	if err != nil {
 		return nil, err
@@ -110,8 +111,9 @@ func CreateUser(db *sql.DB, email, password string) (*ApplicationUser, error) {
 	}
 
 	newUser := &ApplicationUser{
-		Id:       newUserId,
-		Username: email,
+		Id:          newUserId,
+		Username:    email,
+		DisplayName: displayName,
 	}
 
 	userConfig, err := UpdateUserConfig(tx, newUser.Id, defaultConfig)
@@ -156,12 +158,13 @@ func AuthenticateUser(db *sql.DB, email, password string) (*ApplicationUser, err
 		hashedPassword string
 		salt           string
 		userID         int64
+		displayName    string
 	)
 
 	err := db.QueryRow(
-		"SELECT id, email, password, salt FROM users WHERE email = ?",
+		"SELECT id, email, password, salt, display_name FROM users WHERE email = ?",
 		email,
-	).Scan(&userID, &email, &hashedPassword, &salt)
+	).Scan(&userID, &email, &hashedPassword, &salt, &displayName)
 
 	if err != nil {
 		return nil, err
@@ -177,8 +180,9 @@ func AuthenticateUser(db *sql.DB, email, password string) (*ApplicationUser, err
 	}
 
 	return &ApplicationUser{
-		Id:       userID,
-		Username: email,
-		Config:   &userConfig,
+		Id:          userID,
+		Username:    email,
+		DisplayName: displayName,
+		Config:      &userConfig,
 	}, nil
 }

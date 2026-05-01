@@ -1,4 +1,4 @@
-package cmd
+﻿package cmd
 
 import (
 	"fmt"
@@ -28,6 +28,7 @@ type RegisterFormData struct {
 	email           string
 	password        string
 	confirmPassword string
+	displayName     string
 }
 
 type ForgotPassword struct {
@@ -86,7 +87,7 @@ func (h *LoginHandler) HandleInput(msg tea.Msg, context *StateContext) (StateHan
 			newState := NewMainMenuHandler(authUser, context.model)
 			return newState, tea.Batch(commands...)
 		} else {
-			newLoginHandler := NewLoginHandler("❌" + err.Error())
+			newLoginHandler := NewLoginHandler("❌ " + err.Error())
 			newLoginHandler.formData.email = h.formData.email
 			commands = append(commands, newLoginHandler.form.Init())
 			return newLoginHandler, tea.Batch(commands...)
@@ -129,11 +130,13 @@ func NewRegisterHandler(context *database.Context,
 	errorMessage string,
 	email string,
 	password string,
-	confirmPassword string) *RegisterHandler {
+	confirmPassword string,
+	displayName string) *RegisterHandler {
 	data := &RegisterFormData{
 		email:           email,
 		password:        password,
 		confirmPassword: confirmPassword,
+		displayName:     displayName,
 	}
 	form := huh.NewForm(
 		huh.NewGroup(
@@ -150,7 +153,16 @@ func NewRegisterHandler(context *database.Context,
 					return nil
 				}),
 			huh.NewInput().
-				Title("password").
+				Title("Display Name (max 20 chars)").
+				Value(&data.displayName).
+				Validate(func(str string) error {
+					if len(str) > 20 {
+						return fmt.Errorf("display name must be 20 characters or less")
+					}
+					return nil
+				}),
+			huh.NewInput().
+				Title("Password").
 				Value(&data.password).
 				EchoMode(huh.EchoModePassword).
 				Validate(func(str string) error {
@@ -160,7 +172,7 @@ func NewRegisterHandler(context *database.Context,
 					return nil
 				}),
 			huh.NewInput().
-				Title("Confirm password").
+				Title("Confirm Password").
 				Value(&data.confirmPassword).
 				EchoMode(huh.EchoModePassword),
 		),
@@ -191,6 +203,7 @@ func (h *RegisterHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 				h.formData.email,
 				h.formData.password,
 				h.formData.confirmPassword,
+				h.formData.displayName,
 			)
 			initCmd := newHandler.form.Init()
 			commands = append(commands, initCmd)
@@ -198,7 +211,7 @@ func (h *RegisterHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 			return newHandler, tea.Batch(commands...)
 		}
 
-		newUser, err := database.CreateUser(context.model.context.UserRepository, h.formData.email, h.formData.password)
+		newUser, err := database.CreateUser(context.model.context.UserRepository, h.formData.email, h.formData.password, h.formData.displayName)
 		if err != nil {
 			newHandler := NewRegisterHandler(
 				h.context,
@@ -206,6 +219,7 @@ func (h *RegisterHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 				h.formData.email,
 				h.formData.password,
 				h.formData.confirmPassword,
+				h.formData.displayName,
 			)
 			initCmd := newHandler.form.Init()
 			commands = append(commands, initCmd)
@@ -214,8 +228,8 @@ func (h *RegisterHandler) HandleInput(msg tea.Msg, context *StateContext) (State
 		}
 		context.model.session.User = newUser
 		context.model.session.Authenticated = true
-		MainMenuHandler := NewMainMenuHandler(newUser, context.model)
-		return MainMenuHandler, tea.Batch(commands...)
+		mainMenuHandler := NewMainMenuHandler(newUser, context.model)
+		return mainMenuHandler, tea.Batch(commands...)
 	}
 	return h, tea.Batch(commands...)
 }

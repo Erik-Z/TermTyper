@@ -40,7 +40,7 @@ func (h *PreAuthHandler) HandleInput(msg tea.Msg, context *StateContext) (StateH
 				return newLoginHandler, tea.Batch(commands...)
 			case Register:
 				var commands []tea.Cmd
-				newRegisterHandler := NewRegisterHandler(&context.model.context, "", "", "", "")
+				newRegisterHandler := NewRegisterHandler(&context.model.context, "", "", "", "", "")
 				initCmd := newRegisterHandler.form.Init()
 				commands = append(commands, initCmd)
 				return newRegisterHandler, tea.Batch(commands...)
